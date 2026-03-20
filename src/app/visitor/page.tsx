@@ -63,7 +63,7 @@ export default function VisitorCheckIn() {
     try {
       const fullReasonText = `${formData.reason}${formData.details ? `: ${formData.details}` : ''}`;
       
-      let insights = undefined;
+      let insights = null;
       try {
         insights = await analyzeVisitorReasons({ reasonForVisit: fullReasonText });
       } catch (aiError) {
@@ -71,7 +71,7 @@ export default function VisitorCheckIn() {
       }
 
       const checkInId = Math.random().toString(36).substr(2, 9);
-      const newVisit = {
+      const newVisit: any = {
         id: checkInId,
         userId: currentUser.id,
         userName: currentUser.name,
@@ -81,8 +81,12 @@ export default function VisitorCheckIn() {
         domain: formData.domain,
         reason: fullReasonText,
         timestamp: new Date().toISOString(),
-        aiInsights: insights
       };
+
+      // Only add aiInsights if it's not null/undefined to avoid Firestore errors
+      if (insights) {
+        newVisit.aiInsights = insights;
+      }
 
       // Record check-in to Firestore
       const checkInRef = doc(firestore, 'visitor_check_ins', checkInId);

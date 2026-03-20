@@ -59,32 +59,36 @@ export default function LoginPage() {
       const authResult = await signInAnonymously(auth);
       const uid = authResult.user.uid;
       
-      const user = {
+      const userData = {
         id: uid, 
         name: email.split('@')[0].split('.').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' '),
         email: email,
         role: is_admin ? 'ADMIN' : 'VISITOR',
         userType: (is_employee ? 'EMPLOYEE' : 'STUDENT') as UserType,
         isBlocked: false,
-        avatarUrl: `https://picsum.photos/seed/${email}/100/100`
+        avatarUrl: `https://picsum.photos/seed/${email}/100/100`,
+        updatedAt: new Date().toISOString(),
       };
       
       // Bootstrap the admin role in Firestore if this user is the designated admin
       if (is_admin) {
         const adminRoleRef = doc(firestore, 'roles_admin', uid);
         setDocumentNonBlocking(adminRoleRef, { 
-          email: user.email, 
+          email: userData.email, 
           createdAt: new Date().toISOString() 
         }, { merge: true });
       }
 
       // Save user profile
       const userRef = doc(firestore, 'users', uid);
-      setDocumentNonBlocking(userRef, {
-        ...user,
-        updatedAt: new Date().toISOString(),
-        createdAt: existingUser?.id ? undefined : new Date().toISOString()
-      }, { merge: true });
+      
+      // Construct the document data carefully to avoid undefined values
+      const firestoreData: any = { ...userData };
+      if (!existingUser?.id) {
+        firestoreData.createdAt = new Date().toISOString();
+      }
+
+      setDocumentNonBlocking(userRef, firestoreData, { merge: true });
 
       const sessionId = Math.random().toString(36).substr(2, 9);
       const sessionRef = doc(firestore, 'user_sessions', sessionId);
@@ -93,23 +97,23 @@ export default function LoginPage() {
       setDocumentNonBlocking(sessionRef, {
         id: sessionId,
         userId: uid,
-        userName: user.name,
-        userEmail: user.email,
+        userName: userData.name,
+        userEmail: userData.email,
         loginTime: new Date().toISOString(),
         isActive: true,
         deviceType: typeof window !== 'undefined' && window.innerWidth < 768 ? 'mobile' : 'web',
         userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown'
       }, { merge: true });
 
-      setCurrentUser(user as any);
+      setCurrentUser(userData as any);
       setCurrentSessionId(sessionId);
       
       toast({
         title: 'Login Successful',
-        description: `Welcome back, ${user.name}! Access level: ${user.role}`,
+        description: `Welcome back, ${userData.name}! Access level: ${userData.role}`,
       });
       
-      if (user.role === 'ADMIN') {
+      if (userData.role === 'ADMIN') {
         router.push('/admin');
       } else {
         router.push('/visitor');
