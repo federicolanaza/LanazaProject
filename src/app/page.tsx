@@ -20,19 +20,21 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
 
-    // Simulate Institutional Login logic
-    if (!email.endsWith('@neu.edu')) {
+    // Institutional Domain Validation
+    const isInstitutionalEmail = email.endsWith('@neu.edu') || email.endsWith('@neu.edu.ph');
+    
+    if (!isInstitutionalEmail) {
       toast({
         variant: 'destructive',
         title: 'Access Denied',
-        description: 'Please use your institutional @neu.edu email address.',
+        description: 'Please use your institutional @neu.edu or @neu.edu.ph email address.',
       });
       setLoading(false);
       return;
     }
 
     // Check if user is blocked in mock store
-    const existingUser = users.find(u => u.email === email);
+    const existingUser = users.find(u => u.email.toLowerCase() === email.toLowerCase());
     if (existingUser?.isBlocked) {
       toast({
         variant: 'destructive',
@@ -43,9 +45,12 @@ export default function LoginPage() {
       return;
     }
 
-    // Success simulation
+    // Role-Based Access Control logic
+    // Admin: jcesperanza@neu.edu.ph
+    // Visitor: Everyone else
+    const is_admin = email.toLowerCase() === 'jcesperanza@neu.edu.ph' || email.startsWith('admin');
+
     setTimeout(() => {
-      const is_admin = email.startsWith('admin');
       const user = existingUser || {
         id: Math.random().toString(36).substr(2, 9),
         name: email.split('@')[0].split('.').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' '),
@@ -58,10 +63,10 @@ export default function LoginPage() {
       setCurrentUser(user as any);
       toast({
         title: 'Login Successful',
-        description: `Welcome back, ${user.name}!`,
+        description: `Welcome back, ${user.name}! Access level: ${user.role}`,
       });
       
-      if (is_admin) {
+      if (user.role === 'ADMIN') {
         router.push('/admin');
       } else {
         router.push('/visitor');
@@ -76,7 +81,7 @@ export default function LoginPage() {
           <div className="inline-flex items-center justify-center p-3 bg-primary rounded-2xl shadow-lg mb-4">
             <Library className="h-10 w-10 text-primary-foreground" />
           </div>
-          <h1 className="text-4xl font-bold tracking-tight text-primary font-headline">VirtuLib Analytics</h1>
+          <h1 className="text-4xl font-bold tracking-tight text-primary font-headline">VirtuLib</h1>
           <p className="text-muted-foreground">NEU Library Facility Management</p>
         </div>
 
@@ -92,14 +97,14 @@ export default function LoginPage() {
                   <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input 
                     type="email" 
-                    placeholder="name@neu.edu" 
+                    placeholder="name@neu.edu.ph" 
                     className="pl-10"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
                   />
                 </div>
-                <p className="text-xs text-muted-foreground px-1">Try: j.doe@neu.edu or admin@neu.edu</p>
+                <p className="text-xs text-muted-foreground px-1">Try: jcesperanza@neu.edu.ph (Admin)</p>
               </div>
             </CardContent>
             <CardFooter>

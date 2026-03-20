@@ -1,20 +1,19 @@
-
 import { User, VisitEntry } from './types';
 import { subDays, subHours } from 'date-fns';
 
 export const MOCK_USERS: User[] = [
   {
     id: 'u1',
-    name: 'Admin User',
-    email: 'admin@neu.edu',
+    name: 'JC Esperanza',
+    email: 'jcesperanza@neu.edu.ph',
     role: 'ADMIN',
     isBlocked: false,
-    avatarUrl: 'https://picsum.photos/seed/admin/100/100'
+    avatarUrl: 'https://picsum.photos/seed/jce/100/100'
   },
   {
     id: 'u2',
     name: 'John Doe',
-    email: 'j.doe@neu.edu',
+    email: 'j.doe@neu.edu.ph',
     role: 'VISITOR',
     isBlocked: false,
     avatarUrl: 'https://picsum.photos/seed/john/100/100'
@@ -22,7 +21,7 @@ export const MOCK_USERS: User[] = [
   {
     id: 'u3',
     name: 'Jane Smith',
-    email: 'j.smith@neu.edu',
+    email: 'j.smith@neu.edu.ph',
     role: 'VISITOR',
     isBlocked: false,
     avatarUrl: 'https://picsum.photos/seed/jane/100/100'
@@ -34,7 +33,7 @@ export const MOCK_VISITS: VisitEntry[] = [
     id: 'v1',
     userId: 'u2',
     userName: 'John Doe',
-    userEmail: 'j.doe@neu.edu',
+    userEmail: 'j.doe@neu.edu.ph',
     department: 'College of Computer Studies',
     reason: 'Working on my thesis project about AI applications in libraries.',
     timestamp: subHours(new Date(), 2),
@@ -48,7 +47,7 @@ export const MOCK_VISITS: VisitEntry[] = [
     id: 'v2',
     userId: 'u3',
     userName: 'Jane Smith',
-    userEmail: 'j.smith@neu.edu',
+    userEmail: 'j.smith@neu.edu.ph',
     department: 'College of Arts and Sciences',
     reason: 'Borrowing books for the upcoming literature exam.',
     timestamp: subDays(new Date(), 1),
