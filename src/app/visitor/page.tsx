@@ -45,7 +45,16 @@ export default function VisitorCheckIn() {
 
     try {
       const fullReasonText = `${formData.reason}${formData.details ? `: ${formData.details}` : ''}`;
-      const insights = await analyzeVisitorReasons({ reasonForVisit: fullReasonText });
+      
+      let insights = undefined;
+      try {
+        // AI analysis is an enhancement. If it fails (e.g., missing API key), 
+        // we still want the visitor to be able to check in.
+        insights = await analyzeVisitorReasons({ reasonForVisit: fullReasonText });
+      } catch (aiError) {
+        // AI analysis failed, we proceed without it
+        console.warn('AI analysis skipped or failed');
+      }
 
       const newVisit = {
         id: Math.random().toString(36).substr(2, 9),
@@ -68,13 +77,19 @@ export default function VisitorCheckIn() {
         duration: 5000,
       });
 
-      setFormData({ domain: 'LIBRARY', userType: currentUser.userType, department: '', reason: '', details: '' });
+      setFormData({ 
+        domain: 'LIBRARY', 
+        userType: currentUser.userType, 
+        department: '', 
+        reason: '', 
+        details: '' 
+      });
       
     } catch (error) {
       toast({
         variant: 'destructive',
-        title: 'Submission Error',
-        description: 'Something went wrong. Please try again.',
+        title: 'Check-in Failed',
+        description: 'Unable to process your check-in. Please try again or see a staff member.',
       });
     } finally {
       setLoading(false);
@@ -229,7 +244,7 @@ export default function VisitorCheckIn() {
               >
                 {loading ? (
                   <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Analyzing Entry...
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Processing Entry...
                   </>
                 ) : (
                   <>

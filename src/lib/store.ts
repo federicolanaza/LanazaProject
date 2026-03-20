@@ -18,7 +18,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   users: MOCK_USERS,
   visits: MOCK_VISITS,
   setCurrentUser: (user) => set({ currentUser: user }),
-  addVisit: (visit) => set((state) => ({ visits: [visit, ...state.visits] })),
+  addVisit: (visit) => set((state) => ({ 
+    visits: [visit, ...state.visits] 
+  })),
   toggleBlockUser: (userId) => set((state) => ({
     users: state.users.map(u => u.id === userId ? { ...u, isBlocked: !u.isBlocked } : u)
   })),
