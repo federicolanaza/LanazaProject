@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -54,7 +53,7 @@ export default function VisitorCheckIn() {
       addVisit(newVisit);
 
       toast({
-        title: 'Welcome to NEU Library!',
+        title: 'Welcome to VirtuLib!',
         description: 'Your visit has been recorded successfully.',
         duration: 5000,
       });
@@ -81,7 +80,7 @@ export default function VisitorCheckIn() {
             <div className="bg-primary p-2 rounded-lg">
               <Library className="h-6 w-6 text-white" />
             </div>
-            <h1 className="text-2xl font-bold font-headline text-primary">LibTrack</h1>
+            <h1 className="text-2xl font-bold font-headline text-primary">VirtuLib</h1>
           </div>
           <Button 
             variant="ghost" 

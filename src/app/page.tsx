@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -77,7 +76,7 @@ export default function LoginPage() {
           <div className="inline-flex items-center justify-center p-3 bg-primary rounded-2xl shadow-lg mb-4">
             <Library className="h-10 w-10 text-primary-foreground" />
           </div>
-          <h1 className="text-4xl font-bold tracking-tight text-primary font-headline">LibTrack Analytics</h1>
+          <h1 className="text-4xl font-bold tracking-tight text-primary font-headline">VirtuLib Analytics</h1>
           <p className="text-muted-foreground">NEU Library Facility Management</p>
         </div>
 
@@ -119,7 +118,7 @@ export default function LoginPage() {
         </Card>
         
         <p className="text-center text-sm text-muted-foreground">
-          &copy; {new Date().getFullYear()} NEU Library Services. All rights reserved.
+          &copy; {new Date().getFullYear()} VirtuLib Library Services. All rights reserved.
         </p>
       </div>
     </div>

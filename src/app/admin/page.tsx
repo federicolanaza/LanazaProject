@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -72,7 +71,7 @@ export default function AdminDashboard() {
               <div className="bg-primary p-1.5 rounded-lg">
                 <Library className="h-5 w-5 text-white" />
               </div>
-              <span className="text-xl font-bold text-primary font-headline">LibTrack <span className="text-accent">Admin</span></span>
+              <span className="text-xl font-bold text-primary font-headline">VirtuLib <span className="text-accent">Admin</span></span>
             </div>
             <div className="flex items-center gap-4">
               <div className="hidden sm:flex flex-col items-end mr-2">
