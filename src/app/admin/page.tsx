@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -16,27 +17,38 @@ import {
   Search, Users, Calendar, Activity, 
   LogOut, ShieldAlert, BarChart3, 
   UserX, UserCheck, 
-  Building2, BookOpen, Filter, GraduationCap, Briefcase, ChevronRight, LayoutDashboard, Database
+  Building2, BookOpen, Filter, GraduationCap, Briefcase, ChevronRight, LayoutDashboard, Database, Monitor, Smartphone, Clock
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { DEPARTMENTS, VISIT_REASON_GROUPS, UserType } from '@/lib/types';
+import { DEPARTMENTS, VISIT_REASON_GROUPS, UserType, UserSession } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, where, updateDoc, doc } from 'firebase/firestore';
 
 export default function AdminDashboard() {
   const router = useRouter();
   const { toast } = useToast();
+  const firestore = useFirestore();
   const { 
     currentUser, setCurrentUser, 
-    visits, users, toggleBlockUser 
+    visits, users, toggleBlockUser,
+    currentSessionId, setCurrentSessionId
   } = useAppStore();
   
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'VISITS' | 'USERS'>('VISITS');
+  const [activeTab, setActiveTab] = useState<'VISITS' | 'USERS' | 'SESSIONS'>('VISITS');
   
   // Filters
   const [filterType, setFilterType] = useState<UserType | 'ALL'>('ALL');
   const [filterDept, setFilterDept] = useState<string | 'ALL'>('ALL');
   const [filterReason, setFilterReason] = useState<string | 'ALL'>('ALL');
+
+  // Real-time Active Sessions Query
+  const sessionsQuery = useMemoFirebase(() => {
+    return query(collection(firestore, 'user_sessions'), where('isActive', '==', true));
+  }, [firestore]);
+
+  const { data: activeSessions, isLoading: sessionsLoading } = useCollection<UserSession>(sessionsQuery);
 
   useEffect(() => {
     if (!currentUser || currentUser.role !== 'ADMIN') {
@@ -64,9 +76,9 @@ export default function AdminDashboard() {
   }, [visits, searchQuery, filterType, filterDept, filterReason]);
 
   const stats = useMemo(() => {
-    const today = filteredVisits.filter(v => isToday(v.timestamp)).length;
-    const week = filteredVisits.filter(v => isThisWeek(v.timestamp)).length;
-    const month = filteredVisits.filter(v => isThisMonth(v.timestamp)).length;
+    const today = filteredVisits.filter(v => isToday(new Date(v.timestamp))).length;
+    const week = filteredVisits.filter(v => isThisWeek(new Date(v.timestamp))).length;
+    const month = filteredVisits.filter(v => isThisMonth(new Date(v.timestamp))).length;
     return { today, week, month };
   }, [filteredVisits]);
 
@@ -78,11 +90,27 @@ export default function AdminDashboard() {
     );
   }, [users, searchQuery]);
 
+  const handleLogout = async () => {
+    if (currentSessionId) {
+      try {
+        await updateDoc(doc(firestore, 'user_sessions', currentSessionId), {
+          isActive: false,
+          logoutTime: new Date().toISOString()
+        });
+      } catch (err) {
+        console.error("Logout update error:", err);
+      }
+    }
+    setCurrentUser(null);
+    setCurrentSessionId(null);
+    router.push('/');
+  };
+
   if (!currentUser) return null;
 
   return (
     <div className="min-h-screen bg-[#F1F5F9] flex flex-col">
-      {/* Refined Sidebar-like Top Nav */}
+      {/* Sidebar-like Top Nav */}
       <nav className="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-md border-b">
         <div className="max-w-[1600px] mx-auto px-6 lg:px-10">
           <div className="flex justify-between h-20">
@@ -116,7 +144,19 @@ export default function AdminDashboard() {
                   className={cn("rounded-xl h-10 px-6 font-bold transition-all", activeTab === 'USERS' && "shadow-lg")}
                   onClick={() => setActiveTab('USERS')}
                 >
-                  <Users className="mr-2 h-4 w-4" /> User Management
+                  <Users className="mr-2 h-4 w-4" /> Users
+                </Button>
+                <Button 
+                  variant={activeTab === 'SESSIONS' ? 'default' : 'ghost'} 
+                  className={cn("rounded-xl h-10 px-6 font-bold transition-all", activeTab === 'SESSIONS' && "shadow-lg")}
+                  onClick={() => setActiveTab('SESSIONS')}
+                >
+                  <Activity className="mr-2 h-4 w-4" /> Active Sessions
+                  {activeSessions && activeSessions.length > 0 && (
+                    <Badge variant="secondary" className="ml-2 bg-primary/20 text-primary border-none text-[10px] h-5 px-1.5 font-black">
+                      {activeSessions.length}
+                    </Badge>
+                  )}
                 </Button>
               </div>
             </div>
@@ -133,7 +173,7 @@ export default function AdminDashboard() {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                onClick={() => { setCurrentUser(null); router.push('/'); }}
+                onClick={handleLogout}
                 className="text-slate-400 hover:text-destructive hover:bg-destructive/5 rounded-2xl"
               >
                 <LogOut className="h-6 w-6" />
@@ -144,14 +184,13 @@ export default function AdminDashboard() {
       </nav>
 
       <main className="max-w-[1600px] mx-auto w-full px-6 py-10 lg:px-10 space-y-10 flex-1">
-        {/* Analytics Headline */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-primary font-bold uppercase tracking-[0.2em] text-[10px]">
               <LayoutDashboard className="h-3 w-3" /> Dashboard Overview
             </div>
             <h1 className="text-4xl font-black tracking-tight text-slate-900">System Analytics</h1>
-            <p className="text-slate-500 font-medium">Monitoring facility utilization and visitor patterns.</p>
+            <p className="text-slate-500 font-medium">Monitoring facility utilization and real-time activity.</p>
           </div>
           
           <div className="flex gap-4 p-2 bg-white rounded-3xl shadow-sm border">
@@ -164,99 +203,28 @@ export default function AdminDashboard() {
                 <span className="text-xl font-black text-primary">{stats.week}</span>
              </div>
              <div className="px-6 py-2 flex flex-col items-center">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Month</span>
-                <span className="text-xl font-black text-primary">{stats.month}</span>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active</span>
+                <span className="text-xl font-black text-primary">{activeSessions?.length || 0}</span>
              </div>
           </div>
         </div>
 
-        {/* Dynamic Filters Bar */}
-        {activeTab === 'VISITS' && (
-          <Card className="border-none shadow-xl bg-white rounded-[2rem] overflow-visible">
-            <CardContent className="p-6">
-              <div className="flex flex-wrap items-center gap-6">
-                <div className="flex-1 min-w-[240px] relative">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                  <Input 
-                    placeholder="Search by name, email or reason..."
-                    className="pl-12 h-12 rounded-2xl bg-slate-50 border-none focus-visible:ring-primary/20 focus-visible:bg-white transition-all"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-
-                <div className="flex flex-wrap items-center gap-4">
-                  <div className="space-y-1">
-                    <Select value={filterType} onValueChange={(val) => setFilterType(val as any)}>
-                      <SelectTrigger className="w-48 h-12 rounded-2xl border-none bg-slate-50 font-bold text-slate-700">
-                        <div className="flex items-center gap-2">
-                          <Users className="h-4 w-4 text-primary/60" />
-                          <SelectValue placeholder="User Type" />
-                        </div>
-                      </SelectTrigger>
-                      <SelectContent className="rounded-2xl shadow-2xl">
-                        <SelectItem value="ALL">All Visitor Types</SelectItem>
-                        <SelectItem value="STUDENT">Students</SelectItem>
-                        <SelectItem value="EMPLOYEE">Employees</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-1">
-                    <Select value={filterDept} onValueChange={setFilterDept}>
-                      <SelectTrigger className="w-56 h-12 rounded-2xl border-none bg-slate-50 font-bold text-slate-700">
-                        <div className="flex items-center gap-2">
-                          <Building2 className="h-4 w-4 text-primary/60" />
-                          <SelectValue placeholder="Department" />
-                        </div>
-                      </SelectTrigger>
-                      <SelectContent className="rounded-2xl shadow-2xl max-h-[400px]">
-                        <SelectItem value="ALL">All Departments</SelectItem>
-                        {DEPARTMENTS.map(dept => (
-                          <SelectItem key={dept} value={dept}>{dept}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-1">
-                    <Select value={filterReason} onValueChange={setFilterReason}>
-                      <SelectTrigger className="w-56 h-12 rounded-2xl border-none bg-slate-50 font-bold text-slate-700">
-                        <div className="flex items-center gap-2">
-                          <BookOpen className="h-4 w-4 text-primary/60" />
-                          <SelectValue placeholder="Purpose" />
-                        </div>
-                      </SelectTrigger>
-                      <SelectContent className="rounded-2xl shadow-2xl max-h-[400px]">
-                        <SelectItem value="ALL">All Purposes</SelectItem>
-                        {allReasons.map(r => (
-                          <SelectItem key={r} value={r}>{r}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Data Table */}
+        {/* Dynamic Data Content */}
         <Card className="border-none shadow-2xl bg-white rounded-[2.5rem] overflow-hidden">
           <CardHeader className="p-8 bg-slate-50/50 border-b flex flex-row items-center justify-between">
             <div>
               <div className="flex items-center gap-2 text-primary font-bold text-[10px] uppercase tracking-widest mb-1">
-                <Database className="h-3 w-3" /> Data Repository
+                <Database className="h-3 w-3" /> {activeTab === 'SESSIONS' ? 'Real-time Stream' : 'Data Repository'}
               </div>
               <CardTitle className="text-2xl font-black">
-                {activeTab === 'VISITS' ? 'Entry Logs' : 'User Accounts'}
+                {activeTab === 'VISITS' ? 'Entry Logs' : activeTab === 'USERS' ? 'User Accounts' : 'Active Sessions'}
               </CardTitle>
             </div>
-            {activeTab === 'USERS' && (
+            {activeTab !== 'SESSIONS' && (
               <div className="relative w-80">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <Input 
-                  placeholder="Lookup identity..."
+                  placeholder="Lookup records..."
                   className="pl-12 h-12 rounded-2xl bg-white border-slate-200"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -266,7 +234,7 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
-              {activeTab === 'VISITS' ? (
+              {activeTab === 'VISITS' && (
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-slate-50/50 border-none">
@@ -318,13 +286,6 @@ export default function AdminDashboard() {
                               <p className="text-[11px] font-medium text-slate-500 italic line-clamp-2 leading-relaxed">
                                 "{visit.aiInsights.summary}"
                               </p>
-                              <div className="flex flex-wrap justify-end gap-1">
-                                {visit.aiInsights.categories.slice(0, 2).map(cat => (
-                                  <Badge key={cat} className="bg-slate-100 text-slate-500 border-none text-[8px] px-2 h-4 uppercase font-black">
-                                    {cat}
-                                  </Badge>
-                                ))}
-                              </div>
                             </div>
                           ) : (
                             <span className="text-[10px] font-bold text-slate-300 uppercase italic">Raw Data</span>
@@ -334,7 +295,9 @@ export default function AdminDashboard() {
                     ))}
                   </TableBody>
                 </Table>
-              ) : (
+              )}
+
+              {activeTab === 'USERS' && (
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-slate-50/50 border-none">
@@ -380,23 +343,12 @@ export default function AdminDashboard() {
                             size="sm"
                             className={cn(
                               "h-10 rounded-xl px-4 font-bold transition-all",
-                              user.isBlocked 
-                                ? "text-green-600 border-green-200 bg-green-50/50 hover:bg-green-50" 
-                                : "text-destructive hover:bg-destructive/5"
+                              user.isBlocked ? "text-green-600 border-green-200 bg-green-50/50 hover:bg-green-50" : "text-destructive hover:bg-destructive/5"
                             )}
-                            onClick={() => {
-                              toggleBlockUser(user.id);
-                              toast({
-                                title: user.isBlocked ? 'Account Reinstated' : 'Access Restricted',
-                                description: `${user.name} permission set updated.`,
-                              });
-                            }}
+                            onClick={() => toggleBlockUser(user.id)}
                           >
-                            {user.isBlocked ? (
-                              <><UserCheck className="mr-2 h-4 w-4" /> Grant Access</>
-                            ) : (
-                              <><UserX className="mr-2 h-4 w-4" /> Restrict Access</>
-                            )}
+                            {user.isBlocked ? <UserCheck className="mr-2 h-4 w-4" /> : <UserX className="mr-2 h-4 w-4" />}
+                            {user.isBlocked ? 'Grant Access' : 'Restrict Access'}
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -404,19 +356,70 @@ export default function AdminDashboard() {
                   </TableBody>
                 </Table>
               )}
+
+              {activeTab === 'SESSIONS' && (
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-slate-50/50 border-none">
+                      <TableHead className="py-6 px-8 font-black text-slate-400 uppercase tracking-widest text-[10px]">Active User</TableHead>
+                      <TableHead className="py-6 px-4 font-black text-slate-400 uppercase tracking-widest text-[10px]">Device Type</TableHead>
+                      <TableHead className="py-6 px-4 font-black text-slate-400 uppercase tracking-widest text-[10px]">Session Start</TableHead>
+                      <TableHead className="py-6 px-8 font-black text-slate-400 uppercase tracking-widest text-[10px] text-right">Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {activeSessions?.map((session) => (
+                      <TableRow key={session.id} className="group hover:bg-slate-50/80 transition-all border-slate-100">
+                        <TableCell className="px-8 py-6">
+                          <div className="flex items-center gap-4">
+                            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black">
+                              {session.userName.charAt(0)}
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="font-black text-sm text-slate-900">{session.userName}</span>
+                              <span className="text-[10px] font-medium text-slate-400">{session.userEmail}</span>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {session.deviceType === 'mobile' ? (
+                              <Smartphone className="h-4 w-4 text-slate-400" />
+                            ) : (
+                              <Monitor className="h-4 w-4 text-slate-400" />
+                            )}
+                            <span className="text-xs font-bold text-slate-600 capitalize">{session.deviceType}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-3 w-3 text-slate-300" />
+                            <span className="text-xs font-medium text-slate-600">{format(new Date(session.loginTime), 'hh:mm:ss a')}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="px-8 text-right">
+                          <Badge className="bg-green-500 animate-pulse text-white border-none font-black text-[8px] uppercase tracking-widest px-2 h-5">
+                            Live
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </div>
+            {((activeTab === 'VISITS' && filteredVisits.length === 0) || (activeTab === 'USERS' && filteredUsers.length === 0) || (activeTab === 'SESSIONS' && (!activeSessions || activeSessions.length === 0))) && (
+              <div className="py-20 text-center space-y-4 bg-slate-50/30">
+                <div className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-slate-100 text-slate-300">
+                  <Database className="h-10 w-10" />
+                </div>
+                <div className="space-y-1">
+                  <p className="font-black text-slate-400 uppercase tracking-widest text-xs">No Records Found</p>
+                  <p className="text-slate-400 text-sm">Real-time data stream will appear here as users login.</p>
+                </div>
+              </div>
+            )}
           </CardContent>
-          {((activeTab === 'VISITS' && filteredVisits.length === 0) || (activeTab === 'USERS' && filteredUsers.length === 0)) && (
-            <div className="py-20 text-center space-y-4 bg-slate-50/30">
-              <div className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-slate-100 text-slate-300">
-                <Database className="h-10 w-10" />
-              </div>
-              <div className="space-y-1">
-                <p className="font-black text-slate-400 uppercase tracking-widest text-xs">No Records Found</p>
-                <p className="text-slate-400 text-sm">Adjust your filters or search query to find matching data.</p>
-              </div>
-            </div>
-          )}
         </Card>
       </main>
     </div>

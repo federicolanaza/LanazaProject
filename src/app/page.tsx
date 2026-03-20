@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -10,13 +11,16 @@ import { useToast } from '@/hooks/use-toast';
 import { LogIn, Mail, ShieldCheck, ArrowRight } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { UserType } from '@/lib/types';
+import { useFirestore } from '@/firebase';
+import { doc, setDoc } from 'firebase/firestore';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
-  const { setCurrentUser, users } = useAppStore();
+  const { setCurrentUser, setCurrentSessionId, users } = useAppStore();
+  const firestore = useFirestore();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,7 +52,8 @@ export default function LoginPage() {
     const is_admin = email.toLowerCase() === 'jcesperanza@neu.edu.ph' || email.startsWith('admin');
     const is_employee = email.includes('.staff') || email.includes('.prof') || is_admin;
 
-    setTimeout(() => {
+    // Simulate login and session creation
+    setTimeout(async () => {
       const user = existingUser || {
         id: Math.random().toString(36).substr(2, 9),
         name: email.split('@')[0].split('.').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' '),
@@ -59,16 +64,43 @@ export default function LoginPage() {
         avatarUrl: `https://picsum.photos/seed/${email}/100/100`
       };
       
-      setCurrentUser(user as any);
-      toast({
-        title: 'Login Successful',
-        description: `Welcome back, ${user.name}! Access level: ${user.role}`,
-      });
+      const sessionId = Math.random().toString(36).substr(2, 9);
       
-      if (user.role === 'ADMIN') {
-        router.push('/admin');
-      } else {
-        router.push('/visitor');
+      try {
+        // Create a real-time session in Firestore
+        await setDoc(doc(firestore, 'user_sessions', sessionId), {
+          id: sessionId,
+          userId: user.id,
+          userName: user.name,
+          userEmail: user.email,
+          loginTime: new Date().toISOString(),
+          isActive: true,
+          deviceType: window.innerWidth < 768 ? 'mobile' : 'web',
+          userAgent: navigator.userAgent
+        });
+
+        setCurrentUser(user as any);
+        setCurrentSessionId(sessionId);
+        
+        toast({
+          title: 'Login Successful',
+          description: `Welcome back, ${user.name}! Access level: ${user.role}`,
+        });
+        
+        if (user.role === 'ADMIN') {
+          router.push('/admin');
+        } else {
+          router.push('/visitor');
+        }
+      } catch (error) {
+        console.error("Error creating session:", error);
+        toast({
+          variant: 'destructive',
+          title: 'Session Error',
+          description: 'Failed to initialize session. Please try again.',
+        });
+      } finally {
+        setLoading(false);
       }
     }, 800);
   };
@@ -76,7 +108,6 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center p-4 bg-gradient-to-tr from-slate-100 to-blue-50">
       <div className="w-full max-w-[440px] relative">
-        {/* Decorative Elements */}
         <div className="absolute -top-24 -left-24 w-48 h-48 bg-primary/10 rounded-full blur-3xl" />
         <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-accent/10 rounded-full blur-3xl" />
 

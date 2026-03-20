@@ -13,6 +13,18 @@ export interface User {
   avatarUrl?: string;
 }
 
+export interface UserSession {
+  id: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  loginTime: string;
+  logoutTime?: string | null;
+  isActive: boolean;
+  deviceType: string;
+  userAgent: string;
+}
+
 export interface VisitEntry {
   id: string;
   userId: string;
@@ -22,7 +34,7 @@ export interface VisitEntry {
   department: string;
   domain: VisitDomain;
   reason: string;
-  timestamp: Date;
+  timestamp: any; // Can be Date or Firestore Timestamp
   aiInsights?: {
     categories: string[];
     commonThemes: string[];
