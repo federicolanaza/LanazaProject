@@ -3,11 +3,12 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Library, LogIn, Mail } from 'lucide-react';
+import { LogIn, Mail } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { UserType } from '@/lib/types';
 
@@ -77,8 +78,15 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center p-4 bg-[#F2F5F8]">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center p-3 bg-primary rounded-2xl shadow-lg mb-4">
-            <Library className="h-10 w-10 text-primary-foreground" />
+          <div className="inline-flex items-center justify-center p-2 bg-white rounded-2xl shadow-lg mb-4 border border-slate-100">
+            <Image 
+              src="https://upload.wikimedia.org/wikipedia/en/c/c6/New_Era_University.svg" 
+              alt="NEU Logo" 
+              width={80} 
+              height={80} 
+              className="object-contain"
+              priority
+            />
           </div>
           <h1 className="text-4xl font-bold tracking-tight text-primary font-headline">VirtuLib</h1>
           <p className="text-muted-foreground">NEU Library Facility Management</p>

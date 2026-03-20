@@ -3,6 +3,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -15,7 +16,7 @@ import { isToday, isThisWeek, isThisMonth, format } from 'date-fns';
 import { 
   Search, Users, Calendar, Activity, 
   LogOut, ShieldAlert, BarChart3, 
-  UserX, UserCheck, Library,
+  UserX, UserCheck, 
   Building2, BookOpen, Filter, GraduationCap, Briefcase
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -87,8 +88,14 @@ export default function AdminDashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center gap-2">
-              <div className="bg-primary p-1.5 rounded-lg">
-                <Library className="h-5 w-5 text-white" />
+              <div className="bg-white p-1 rounded-lg border">
+                <Image 
+                  src="https://upload.wikimedia.org/wikipedia/en/c/c6/New_Era_University.svg" 
+                  alt="NEU Logo" 
+                  width={24} 
+                  height={24} 
+                  className="object-contain"
+                />
               </div>
               <span className="text-xl font-bold text-primary font-headline">VirtuLib <span className="text-accent">Admin</span></span>
             </div>

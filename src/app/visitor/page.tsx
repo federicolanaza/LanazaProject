@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -13,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { DEPARTMENTS, VISIT_REASON_GROUPS, VisitDomain, UserType } from '@/lib/types';
 import { useAppStore } from '@/lib/store';
 import { analyzeVisitorReasons } from '@/ai/flows/analyze-visitor-reasons';
-import { LogOut, CheckCircle2, Loader2, Library, Building2, BookOpen, GraduationCap, Briefcase } from 'lucide-react';
+import { LogOut, CheckCircle2, Loader2, Building2, BookOpen, GraduationCap, Briefcase } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function VisitorCheckIn() {
@@ -101,8 +102,14 @@ export default function VisitorCheckIn() {
       <div className="max-w-2xl mx-auto space-y-8">
         <header className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="bg-primary p-2 rounded-lg">
-              <Library className="h-6 w-6 text-white" />
+            <div className="bg-white p-1 rounded-lg border">
+              <Image 
+                src="https://upload.wikimedia.org/wikipedia/en/c/c6/New_Era_University.svg" 
+                alt="NEU Logo" 
+                width={32} 
+                height={32} 
+                className="object-contain"
+              />
             </div>
             <h1 className="text-2xl font-bold font-headline text-primary">VirtuLib</h1>
           </div>
