@@ -60,7 +60,7 @@ export default function LoginPage() {
       const uid = authResult.user.uid;
       
       const user = {
-        id: uid, // Use actual Firebase UID
+        id: uid, 
         name: email.split('@')[0].split('.').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' '),
         email: email,
         role: is_admin ? 'ADMIN' : 'VISITOR',
@@ -69,10 +69,27 @@ export default function LoginPage() {
         avatarUrl: `https://picsum.photos/seed/${email}/100/100`
       };
       
+      // Bootstrap the admin role in Firestore if this user is the designated admin
+      if (is_admin) {
+        const adminRoleRef = doc(firestore, 'roles_admin', uid);
+        setDocumentNonBlocking(adminRoleRef, { 
+          email: user.email, 
+          createdAt: new Date().toISOString() 
+        }, { merge: true });
+      }
+
+      // Save user profile
+      const userRef = doc(firestore, 'users', uid);
+      setDocumentNonBlocking(userRef, {
+        ...user,
+        updatedAt: new Date().toISOString(),
+        createdAt: existingUser?.id ? undefined : new Date().toISOString()
+      }, { merge: true });
+
       const sessionId = Math.random().toString(36).substr(2, 9);
       const sessionRef = doc(firestore, 'user_sessions', sessionId);
 
-      // Non-blocking write to Firestore
+      // Record session
       setDocumentNonBlocking(sessionRef, {
         id: sessionId,
         userId: uid,

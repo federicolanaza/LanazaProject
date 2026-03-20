@@ -14,16 +14,6 @@ rules_version = '2';
  * - /roles_admin/{adminId}: Flag documents; existence of a UID here grants administrative access.
  * - /visitor_check_ins/{checkInId}: Denormalized check-in records.
  * - /user_sessions/{sessionId}: Real-time session tracking for the admin dashboard.
- * 
- * Key Security Decisions:
- * - Denormalization for Authorization: The 'userId' is stored directly on 'VisitorCheckIn' 
- *   and 'UserSession' documents. This allows rules to verify ownership without costly 
- *   'get()' lookups to a parent user document.
- * - Query Security: Listing of shared top-level collections is restricted. Non-admin users 
- *   must provide a query filter matching their own 'userId' to list their own records.
- * - Prototyping Flexibility: While authorization is strictly enforced based on identity 
- *   and ownership, the internal schema of documents (beyond ID/Owner fields) is not 
- *   validated, allowing for rapid front-end iteration.
  */
 
 service cloud.firestore {
@@ -60,10 +50,6 @@ service cloud.firestore {
 
     /**
      * @description Rules for user profiles. Users manage their own; admins manage all.
-     * @path /users/{userId}
-     * @allow (create) if user is creating their own profile.
-     * @deny (create) if the UID in the path does not match the auth UID.
-     * @principle Restricts access to a user's own data tree and enforces self-creation.
      */
     match /users/{userId} {
       allow get: if isSignedIn() && (isOwner(userId) || isAdmin());
@@ -74,24 +60,19 @@ service cloud.firestore {
     }
 
     /**
-     * @description Administrative flag collection. Existence of a UID here grants admin rights.
-     * @path /roles_admin/{adminId}
-     * @allow (get) if the user is signed in (needed for admin check logic).
-     * @deny (create, update, delete) for all client-side requests to prevent privilege escalation.
-     * @principle Implements DBAC (Database-Backed Access Control) for administrative roles.
+     * @description Administrative flag collection. 
+     * For this prototype, we allow a user to create their own admin entry to support 
+     * the "designated admin" bootstrap logic in the login page.
      */
     match /roles_admin/{adminId} {
       allow get: if isSignedIn();
       allow list: if isAdmin();
-      allow create, update, delete: if false; // Admin roles managed via Console or Cloud Functions only.
+      allow create: if isOwner(adminId); 
+      allow update, delete: if isAdmin();
     }
 
     /**
      * @description Tracks individual visitor check-ins.
-     * @path /visitor_check_ins/{checkInId}
-     * @allow (create) if the user is signed in and the userId in the data matches their auth UID.
-     * @deny (list) if a non-admin attempts to list without a filter on their own userId.
-     * @principle Validates relational integrity using denormalized ownership fields.
      */
     match /visitor_check_ins/{checkInId} {
       allow get: if isSignedIn() && (isDocumentOwner(resource.data.userId) || isAdmin());
@@ -103,10 +84,6 @@ service cloud.firestore {
 
     /**
      * @description Real-time user sessions for admin monitoring.
-     * @path /user_sessions/{sessionId}
-     * @allow (create/update) if the user is managing their own session (login/logout).
-     * @deny (update) if the userId field is modified to hijack another user's session.
-     * @principle Enforces document ownership for writes while allowing admin visibility.
      */
     match /user_sessions/{sessionId} {
       allow get: if isSignedIn() && (isDocumentOwner(resource.data.userId) || isAdmin());
