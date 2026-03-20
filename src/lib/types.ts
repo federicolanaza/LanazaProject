@@ -26,6 +26,7 @@ export interface VisitEntry {
 }
 
 export const DEPARTMENTS = [
+  "Dean's Office",
   'College of Computer Studies',
   'College of Engineering',
   'College of Arts and Sciences',

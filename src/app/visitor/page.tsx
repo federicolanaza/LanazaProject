@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { DEPARTMENTS, VISIT_REASON_GROUPS } from '@/lib/types';
 import { useAppStore } from '@/lib/store';
 import { analyzeVisitorReasons } from '@/ai/flows/analyze-visitor-reasons';
-import { LogOut, CheckCircle2, Loader2, Library, Info } from 'lucide-react';
+import { LogOut, CheckCircle2, Loader2, Library, Info, Building2 } from 'lucide-react';
 
 export default function VisitorCheckIn() {
   const router = useRouter();
@@ -110,7 +110,18 @@ export default function VisitorCheckIn() {
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="department">College Department</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="department">College Department</Label>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm" 
+                    className="h-7 text-[10px] gap-1 border-primary/20 hover:bg-primary/5 hover:text-primary transition-colors"
+                    onClick={() => setFormData({ ...formData, department: "Dean's Office" })}
+                  >
+                    <Building2 className="h-3 w-3" /> Dean's Office
+                  </Button>
+                </div>
                 <Select 
                   value={formData.department} 
                   onValueChange={(val) => setFormData({...formData, department: val})}
