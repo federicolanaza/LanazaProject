@@ -1,5 +1,6 @@
 
 export type UserRole = 'ADMIN' | 'VISITOR';
+export type VisitDomain = 'LIBRARY' | 'DEANS_OFFICE';
 
 export interface User {
   id: string;
@@ -16,6 +17,7 @@ export interface VisitEntry {
   userName: string;
   userEmail: string;
   department: string;
+  domain: VisitDomain;
   reason: string;
   timestamp: Date;
   aiInsights?: {
@@ -26,7 +28,6 @@ export interface VisitEntry {
 }
 
 export const DEPARTMENTS = [
-  "Dean's Office",
   'College of Computer Studies',
   'College of Engineering',
   'College of Arts and Sciences',

@@ -9,10 +9,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { DEPARTMENTS, VISIT_REASON_GROUPS } from '@/lib/types';
+import { DEPARTMENTS, VISIT_REASON_GROUPS, VisitDomain } from '@/lib/types';
 import { useAppStore } from '@/lib/store';
 import { analyzeVisitorReasons } from '@/ai/flows/analyze-visitor-reasons';
-import { LogOut, CheckCircle2, Loader2, Library, Info, Building2 } from 'lucide-react';
+import { LogOut, CheckCircle2, Loader2, Library, Info, Building2, BookOpen } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export default function VisitorCheckIn() {
   const router = useRouter();
@@ -20,6 +21,7 @@ export default function VisitorCheckIn() {
   const { currentUser, setCurrentUser, addVisit } = useAppStore();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
+    domain: 'LIBRARY' as VisitDomain,
     department: '',
     reason: '',
     details: ''
@@ -38,10 +40,7 @@ export default function VisitorCheckIn() {
     setLoading(true);
 
     try {
-      // Combine selection and optional details for AI analysis
       const fullReasonText = `${formData.reason}${formData.details ? `: ${formData.details}` : ''}`;
-      
-      // GenAI Analysis
       const insights = await analyzeVisitorReasons({ reasonForVisit: fullReasonText });
 
       const newVisit = {
@@ -50,6 +49,7 @@ export default function VisitorCheckIn() {
         userName: currentUser.name,
         userEmail: currentUser.email,
         department: formData.department,
+        domain: formData.domain,
         reason: fullReasonText,
         timestamp: new Date(),
         aiInsights: insights
@@ -58,13 +58,12 @@ export default function VisitorCheckIn() {
       addVisit(newVisit);
 
       toast({
-        title: 'Welcome to VirtuLib!',
-        description: 'Your visit has been recorded successfully.',
+        title: 'Check-in Successful',
+        description: `Welcome to the ${formData.domain === 'LIBRARY' ? 'Library' : "Dean's Office"}!`,
         duration: 5000,
       });
 
-      // Clear form
-      setFormData({ department: '', reason: '', details: '' });
+      setFormData({ domain: 'LIBRARY', department: '', reason: '', details: '' });
       
     } catch (error) {
       toast({
@@ -99,29 +98,51 @@ export default function VisitorCheckIn() {
 
         <div className="space-y-4 text-center">
           <h2 className="text-3xl font-extrabold text-foreground">Facility Check-in</h2>
-          <p className="text-muted-foreground">Hello, {currentUser.name}. Please complete the form to register your entry.</p>
+          <p className="text-muted-foreground">Hello, {currentUser.name}. Please select your destination and complete the form.</p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <Button
+            variant="outline"
+            className={cn(
+              "h-24 flex-col gap-2 rounded-2xl border-2 transition-all",
+              formData.domain === 'LIBRARY' 
+                ? "border-primary bg-primary/5 text-primary shadow-md" 
+                : "border-transparent bg-white hover:border-primary/20"
+            )}
+            onClick={() => setFormData({ ...formData, domain: 'LIBRARY' })}
+          >
+            <BookOpen className="h-6 w-6" />
+            <span className="font-bold">Library Visit</span>
+          </Button>
+          <Button
+            variant="outline"
+            className={cn(
+              "h-24 flex-col gap-2 rounded-2xl border-2 transition-all",
+              formData.domain === 'DEANS_OFFICE' 
+                ? "border-primary bg-primary/5 text-primary shadow-md" 
+                : "border-transparent bg-white hover:border-primary/20"
+            )}
+            onClick={() => setFormData({ ...formData, domain: 'DEANS_OFFICE' })}
+          >
+            <Building2 className="h-6 w-6" />
+            <span className="font-bold">Dean's Office Visit</span>
+          </Button>
         </div>
 
         <Card className="border-none shadow-xl bg-white">
           <CardHeader>
-            <CardTitle>Visitor Details</CardTitle>
-            <CardDescription>This information helps us improve our library services.</CardDescription>
+            <CardTitle>{formData.domain === 'LIBRARY' ? 'Library' : "Dean's Office"} Entry Form</CardTitle>
+            <CardDescription>
+              {formData.domain === 'LIBRARY' 
+                ? "Register your visit to access library facilities and resources." 
+                : "Register your visit for administrative matters at the Dean's Office."}
+            </CardDescription>
           </CardHeader>
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-6">
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="department">College Department</Label>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    size="sm" 
-                    className="h-7 text-[10px] gap-1 border-primary/20 hover:bg-primary/5 hover:text-primary transition-colors"
-                    onClick={() => setFormData({ ...formData, department: "Dean's Office" })}
-                  >
-                    <Building2 className="h-3 w-3" /> Dean's Office
-                  </Button>
-                </div>
+                <Label htmlFor="department">College Department</Label>
                 <Select 
                   value={formData.department} 
                   onValueChange={(val) => setFormData({...formData, department: val})}
@@ -167,15 +188,11 @@ export default function VisitorCheckIn() {
                 </Label>
                 <Textarea 
                   id="details"
-                  placeholder="Tell us more about your visit (e.g., specific book title, project name)..."
+                  placeholder="Tell us more about your visit..."
                   className="min-h-[100px] rounded-xl resize-none"
                   value={formData.details}
                   onChange={(e) => setFormData({...formData, details: e.target.value})}
                 />
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-blue-50/50 p-2 rounded-lg border border-blue-100">
-                  <Info className="h-3.5 w-3.5 text-blue-500" />
-                  Your description helps our AI generate better usage insights.
-                </div>
               </div>
 
               <Button 
@@ -197,9 +214,9 @@ export default function VisitorCheckIn() {
           </form>
         </Card>
 
-        <footer className="text-center space-y-4 py-8">
+        <footer className="text-center py-8">
           <div className="flex justify-center gap-6 text-sm text-muted-foreground">
-            <span className="cursor-pointer hover:underline">Library Policy</span>
+            <span className="cursor-pointer hover:underline">Facility Policy</span>
             <span className="cursor-pointer hover:underline">Support</span>
             <span className="cursor-pointer hover:underline">Contact</span>
           </div>

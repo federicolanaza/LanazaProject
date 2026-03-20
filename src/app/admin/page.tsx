@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -13,8 +14,8 @@ import { isToday, isThisWeek, isThisMonth, format } from 'date-fns';
 import { 
   Search, Users, Calendar, Activity, 
   LogOut, ShieldAlert, BarChart3, 
-  Trash2, UserX, UserCheck, Library,
-  Sparkles
+  UserX, UserCheck, Library,
+  Sparkles, Building2, BookOpen
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
@@ -47,7 +48,8 @@ export default function AdminDashboard() {
     return visits.filter(v => 
       v.userName.toLowerCase().includes(searchQuery.toLowerCase()) || 
       v.userEmail.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      v.department.toLowerCase().includes(searchQuery.toLowerCase())
+      v.department.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      v.domain.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [visits, searchQuery]);
 
@@ -108,14 +110,14 @@ export default function AdminDashboard() {
               className="rounded-lg h-9"
               onClick={() => setActiveTab('VISITS')}
             >
-              <BarChart3 className="mr-2 h-4 w-4" /> Visits Log
+              <BarChart3 className="mr-2 h-4 w-4" /> Entry Log
             </Button>
             <Button 
               variant={activeTab === 'USERS' ? 'default' : 'ghost'} 
               className="rounded-lg h-9"
               onClick={() => setActiveTab('USERS')}
             >
-              <Users className="mr-2 h-4 w-4" /> User Management
+              <Users className="mr-2 h-4 w-4" /> Users
             </Button>
           </div>
         </div>
@@ -126,7 +128,7 @@ export default function AdminDashboard() {
             <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full -mr-8 -mt-8 group-hover:bg-primary/10 transition-colors" />
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-primary" /> Daily Visitors
+                <Calendar className="h-4 w-4 text-primary" /> Daily Entries
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -150,7 +152,7 @@ export default function AdminDashboard() {
             <div className="absolute top-0 right-0 w-24 h-24 bg-chart-3/5 rounded-full -mr-8 -mt-8 group-hover:bg-chart-3/10 transition-colors" />
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <ShieldAlert className="h-4 w-4 text-chart-3" /> Monthly Peak
+                <ShieldAlert className="h-4 w-4 text-chart-3" /> Monthly Total
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -168,7 +170,7 @@ export default function AdminDashboard() {
                 <CardTitle className="text-lg">{activeTab === 'VISITS' ? 'Facility Entry Logs' : 'System Users'}</CardTitle>
                 <CardDescription>
                   {activeTab === 'VISITS' 
-                    ? `Showing ${filteredVisits.length} recorded entries.` 
+                    ? `Showing ${filteredVisits.length} recorded entries across all domains.` 
                     : `Managing ${filteredUsers.length} institutional accounts.`
                   }
                 </CardDescription>
@@ -176,7 +178,7 @@ export default function AdminDashboard() {
               <div className="relative w-full sm:w-72">
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input 
-                  placeholder={activeTab === 'VISITS' ? "Search visits..." : "Lookup user by name..."}
+                  placeholder={activeTab === 'VISITS' ? "Search entries..." : "Lookup user..."}
                   className="pl-9 h-10 rounded-xl"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -189,9 +191,10 @@ export default function AdminDashboard() {
               <Table>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent bg-slate-50/30">
-                    <TableHead className="w-[180px]">Timestamp</TableHead>
+                    <TableHead className="w-[150px]">Time</TableHead>
+                    <TableHead>Domain</TableHead>
                     <TableHead>Visitor</TableHead>
-                    <TableHead>College/Dept</TableHead>
+                    <TableHead>Dept</TableHead>
                     <TableHead className="max-w-[300px]">AI Insight Tool</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -199,50 +202,47 @@ export default function AdminDashboard() {
                   {filteredVisits.map((visit) => (
                     <TableRow key={visit.id} className="group transition-colors hover:bg-slate-50/50">
                       <TableCell className="font-medium text-xs text-muted-foreground">
-                        {format(new Date(visit.timestamp), 'MMM dd, yyyy')}<br/>
+                        {format(new Date(visit.timestamp), 'MMM dd')}<br/>
                         <span className="text-foreground">{format(new Date(visit.timestamp), 'hh:mm a')}</span>
                       </TableCell>
                       <TableCell>
-                        <div className="flex flex-col">
-                          <span className="font-semibold">{visit.userName}</span>
-                          <span className="text-xs text-muted-foreground">{visit.userEmail}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className="font-normal bg-blue-50 text-blue-700 hover:bg-blue-100 border-none">
-                          {visit.department}
+                        <Badge variant="outline" className={cn(
+                          "gap-1.5 font-semibold border-none",
+                          visit.domain === 'LIBRARY' ? "bg-blue-50 text-blue-700" : "bg-purple-50 text-purple-700"
+                        )}>
+                          {visit.domain === 'LIBRARY' ? <BookOpen className="h-3 w-3" /> : <Building2 className="h-3 w-3" />}
+                          {visit.domain === 'LIBRARY' ? 'Library' : "Dean's Office"}
                         </Badge>
                       </TableCell>
                       <TableCell>
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-sm">{visit.userName}</span>
+                          <span className="text-[10px] text-muted-foreground">{visit.userEmail}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-xs">{visit.department}</span>
+                      </TableCell>
+                      <TableCell>
                         {visit.aiInsights ? (
-                          <div className="space-y-2 py-1">
-                            <div className="flex items-center gap-1.5 text-xs font-semibold text-primary">
-                              <Sparkles className="h-3 w-3" /> AI Summary
-                            </div>
-                            <p className="text-xs italic text-muted-foreground leading-relaxed">
+                          <div className="space-y-1.5 py-1">
+                            <p className="text-[11px] italic text-muted-foreground leading-tight">
                               "{visit.aiInsights.summary}"
                             </p>
                             <div className="flex flex-wrap gap-1">
                               {visit.aiInsights.categories.map(cat => (
-                                <Badge key={cat} className="text-[10px] py-0 px-1.5 h-4 bg-accent/20 text-accent-foreground border-none">
+                                <Badge key={cat} className="text-[9px] py-0 px-1.5 h-3.5 bg-accent/10 text-accent-foreground border-none">
                                   {cat}
                                 </Badge>
                               ))}
                             </div>
                           </div>
                         ) : (
-                          <span className="text-xs text-muted-foreground italic">No analysis available</span>
+                          <span className="text-xs text-muted-foreground italic">No analysis</span>
                         )}
                       </TableCell>
                     </TableRow>
                   ))}
-                  {filteredVisits.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={4} className="h-48 text-center text-muted-foreground">
-                        No visit records found matching your search.
-                      </TableCell>
-                    </TableRow>
-                  )}
                 </TableBody>
               </Table>
             ) : (
@@ -250,7 +250,7 @@ export default function AdminDashboard() {
                 <TableHeader>
                   <TableRow className="hover:bg-transparent bg-slate-50/30">
                     <TableHead>Name</TableHead>
-                    <TableHead>Institutional Email</TableHead>
+                    <TableHead>Email</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -264,34 +264,37 @@ export default function AdminDashboard() {
                             <AvatarImage src={user.avatarUrl} />
                             <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                           </Avatar>
-                          <span className="font-semibold">{user.name}</span>
+                          <span className="font-semibold text-sm">{user.name}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="text-muted-foreground">{user.email}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{user.email}</TableCell>
                       <TableCell>
                         {user.isBlocked ? (
-                          <Badge variant="destructive" className="font-medium">Blocked</Badge>
+                          <Badge variant="destructive" className="text-[10px] h-5">Blocked</Badge>
                         ) : (
-                          <Badge variant="secondary" className="bg-green-50 text-green-700 hover:bg-green-100 border-none font-medium">Active</Badge>
+                          <Badge variant="secondary" className="bg-green-50 text-green-700 text-[10px] h-5 border-none">Active</Badge>
                         )}
                       </TableCell>
                       <TableCell className="text-right">
                         <Button 
                           variant={user.isBlocked ? "outline" : "ghost"}
                           size="sm"
-                          className={user.isBlocked ? "text-green-600 border-green-200" : "text-destructive hover:bg-destructive/10"}
+                          className={cn(
+                            "h-8 text-xs",
+                            user.isBlocked ? "text-green-600 border-green-200" : "text-destructive hover:bg-destructive/10"
+                          )}
                           onClick={() => {
                             toggleBlockUser(user.id);
                             toast({
                               title: user.isBlocked ? 'User Unblocked' : 'User Blocked',
-                              description: `${user.name} has been ${user.isBlocked ? 'granted' : 'restricted from'} facility access.`,
+                              description: `${user.name} access updated.`,
                             });
                           }}
                         >
                           {user.isBlocked ? (
-                            <><UserCheck className="mr-2 h-4 w-4" /> Grant Access</>
+                            <><UserCheck className="mr-1 h-3 w-3" /> Grant</>
                           ) : (
-                            <><UserX className="mr-2 h-4 w-4" /> Block User</>
+                            <><UserX className="mr-1 h-3 w-3" /> Block</>
                           )}
                         </Button>
                       </TableCell>

@@ -1,3 +1,4 @@
+
 import { User, VisitEntry } from './types';
 import { subDays, subHours } from 'date-fns';
 
@@ -35,6 +36,7 @@ export const MOCK_VISITS: VisitEntry[] = [
     userName: 'John Doe',
     userEmail: 'j.doe@neu.edu.ph',
     department: 'College of Computer Studies',
+    domain: 'LIBRARY',
     reason: 'Working on my thesis project about AI applications in libraries.',
     timestamp: subHours(new Date(), 2),
     aiInsights: {
@@ -49,6 +51,7 @@ export const MOCK_VISITS: VisitEntry[] = [
     userName: 'Jane Smith',
     userEmail: 'j.smith@neu.edu.ph',
     department: 'College of Arts and Sciences',
+    domain: 'LIBRARY',
     reason: 'Borrowing books for the upcoming literature exam.',
     timestamp: subDays(new Date(), 1),
     aiInsights: {
