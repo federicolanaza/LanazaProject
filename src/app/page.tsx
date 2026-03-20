@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { LogIn, Mail, ShieldCheck, ArrowRight } from 'lucide-react';
+import { LogIn, Mail, ShieldCheck, ArrowRight, Lock, ChevronLeft } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { UserType } from '@/lib/types';
 import { useFirestore, useAuth } from '@/firebase';
@@ -17,7 +17,10 @@ import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  
   const router = useRouter();
   const { toast } = useToast();
   const { setCurrentUser, setCurrentSessionId, users } = useAppStore();
@@ -40,6 +43,26 @@ export default function LoginPage() {
       return;
     }
 
+    const is_admin = email.toLowerCase() === 'jcesperanza@neu.edu.ph' || email.startsWith('admin');
+    
+    // Step 1: Detect admin and show password field
+    if (is_admin && !showPassword) {
+      setShowPassword(true);
+      setLoading(false);
+      return;
+    }
+
+    // Step 2: Validate password for admin
+    if (is_admin && password !== 'admin123') {
+      toast({
+        variant: 'destructive',
+        title: 'Authentication Failed',
+        description: 'Incorrect administrative password.',
+      });
+      setLoading(false);
+      return;
+    }
+
     const existingUser = users.find(u => u.email.toLowerCase() === email.toLowerCase());
     if (existingUser?.isBlocked) {
       toast({
@@ -51,7 +74,6 @@ export default function LoginPage() {
       return;
     }
 
-    const is_admin = email.toLowerCase() === 'jcesperanza@neu.edu.ph' || email.startsWith('admin');
     const is_employee = email.includes('.staff') || email.includes('.prof') || is_admin;
 
     try {
@@ -82,7 +104,6 @@ export default function LoginPage() {
       // Save user profile
       const userRef = doc(firestore, 'users', uid);
       
-      // Construct the document data carefully to avoid undefined values
       const firestoreData: any = { ...userData };
       if (!existingUser?.id) {
         firestoreData.createdAt = new Date().toISOString();
@@ -154,28 +175,65 @@ export default function LoginPage() {
           <CardHeader className="pt-8 pb-4">
             <div className="flex items-center gap-2 text-primary/80 mb-1">
               <ShieldCheck className="h-4 w-4" />
-              <span className="text-xs font-bold uppercase tracking-widest">Secure Access</span>
+              <span className="text-xs font-bold uppercase tracking-widest">
+                {showPassword ? 'Security Verification' : 'Secure Access'}
+              </span>
             </div>
-            <CardTitle className="text-2xl font-bold">Institutional Login</CardTitle>
-            <CardDescription className="text-slate-500">Sign in with your university credentials to continue.</CardDescription>
+            <CardTitle className="text-2xl font-bold">
+              {showPassword ? 'Admin Verification' : 'Institutional Login'}
+            </CardTitle>
+            <CardDescription className="text-slate-500">
+              {showPassword ? 'Enter your administrative credentials.' : 'Sign in with your university credentials to continue.'}
+            </CardDescription>
           </CardHeader>
           <form onSubmit={handleLogin}>
             <CardContent className="space-y-6">
-              <div className="space-y-2">
+              <div className="space-y-4">
                 <div className="relative group">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-primary transition-colors" />
+                  <Mail className={`absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 transition-colors ${showPassword ? 'text-slate-300' : 'text-slate-400 group-focus-within:text-primary'}`} />
                   <Input 
                     type="email" 
                     placeholder="name@neu.edu.ph" 
-                    className="pl-12 h-14 rounded-2xl border-slate-200 bg-slate-50/50 focus:bg-white transition-all text-base"
+                    className="pl-12 h-14 rounded-2xl border-slate-200 bg-slate-50/50 focus:bg-white transition-all text-base disabled:opacity-50"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    disabled={showPassword}
                     required
                   />
                 </div>
-                <div className="flex justify-between items-center px-1">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Admin Demo: jcesperanza@neu.edu.ph</span>
-                </div>
+
+                {showPassword && (
+                  <div className="relative group animate-in slide-in-from-top-2 duration-300">
+                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-primary transition-colors" />
+                    <Input 
+                      type="password"
+                      placeholder="Admin Password"
+                      className="pl-12 h-14 rounded-2xl border-slate-200 bg-slate-50/50 focus:bg-white transition-all text-base"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      autoFocus
+                      required
+                    />
+                  </div>
+                )}
+
+                {!showPassword && (
+                  <div className="flex justify-between items-center px-1">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Admin Demo: jcesperanza@neu.edu.ph</span>
+                  </div>
+                )}
+                
+                {showPassword && (
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setShowPassword(false)}
+                    className="text-slate-400 hover:text-primary text-xs font-bold gap-1 px-1 h-auto"
+                  >
+                    <ChevronLeft className="h-3 w-3" /> Use different email
+                  </Button>
+                )}
               </div>
             </CardContent>
             <CardFooter className="pb-8 pt-2">
@@ -189,7 +247,8 @@ export default function LoginPage() {
                   </span>
                 ) : (
                   <span className="flex items-center justify-center gap-2">
-                    Continue <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                    {showPassword ? 'Login to Dashboard' : 'Continue'} 
+                    <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
                   </span>
                 )}
               </Button>
