@@ -8,6 +8,7 @@ export const MOCK_USERS: User[] = [
     name: 'JC Esperanza',
     email: 'jcesperanza@neu.edu.ph',
     role: 'ADMIN',
+    userType: 'EMPLOYEE',
     isBlocked: false,
     avatarUrl: 'https://picsum.photos/seed/jce/100/100'
   },
@@ -16,6 +17,7 @@ export const MOCK_USERS: User[] = [
     name: 'John Doe',
     email: 'j.doe@neu.edu.ph',
     role: 'VISITOR',
+    userType: 'STUDENT',
     isBlocked: false,
     avatarUrl: 'https://picsum.photos/seed/john/100/100'
   },
@@ -24,6 +26,7 @@ export const MOCK_USERS: User[] = [
     name: 'Jane Smith',
     email: 'j.smith@neu.edu.ph',
     role: 'VISITOR',
+    userType: 'STUDENT',
     isBlocked: false,
     avatarUrl: 'https://picsum.photos/seed/jane/100/100'
   }
@@ -35,6 +38,7 @@ export const MOCK_VISITS: VisitEntry[] = [
     userId: 'u2',
     userName: 'John Doe',
     userEmail: 'j.doe@neu.edu.ph',
+    userType: 'STUDENT',
     department: 'College of Computer Studies',
     domain: 'LIBRARY',
     reason: 'Working on my thesis project about AI applications in libraries.',
@@ -50,6 +54,7 @@ export const MOCK_VISITS: VisitEntry[] = [
     userId: 'u3',
     userName: 'Jane Smith',
     userEmail: 'j.smith@neu.edu.ph',
+    userType: 'STUDENT',
     department: 'College of Arts and Sciences',
     domain: 'LIBRARY',
     reason: 'Borrowing books for the upcoming literature exam.',

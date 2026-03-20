@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useAppStore } from '@/lib/store';
 import { isToday, isThisWeek, isThisMonth, format } from 'date-fns';
@@ -15,9 +16,11 @@ import {
   Search, Users, Calendar, Activity, 
   LogOut, ShieldAlert, BarChart3, 
   UserX, UserCheck, Library,
-  Sparkles, Building2, BookOpen
+  Building2, BookOpen, Filter, GraduationCap, Briefcase
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { DEPARTMENTS, VISIT_REASON_GROUPS, UserType } from '@/lib/types';
+import { cn } from '@/lib/utils';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -29,6 +32,11 @@ export default function AdminDashboard() {
   
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'VISITS' | 'USERS'>('VISITS');
+  
+  // Filters
+  const [filterType, setFilterType] = useState<UserType | 'ALL'>('ALL');
+  const [filterDept, setFilterDept] = useState<string | 'ALL'>('ALL');
+  const [filterReason, setFilterReason] = useState<string | 'ALL'>('ALL');
 
   useEffect(() => {
     if (!currentUser || currentUser.role !== 'ADMIN') {
@@ -36,22 +44,31 @@ export default function AdminDashboard() {
     }
   }, [currentUser, router]);
 
-  const stats = useMemo(() => {
-    const today = visits.filter(v => isToday(v.timestamp)).length;
-    const week = visits.filter(v => isThisWeek(v.timestamp)).length;
-    const month = visits.filter(v => isThisMonth(v.timestamp)).length;
-    return { today, week, month };
-  }, [visits]);
+  const allReasons = useMemo(() => {
+    return VISIT_REASON_GROUPS.flatMap(g => g.reasons);
+  }, []);
 
   const filteredVisits = useMemo(() => {
-    if (!searchQuery) return visits;
-    return visits.filter(v => 
-      v.userName.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      v.userEmail.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      v.department.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      v.domain.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [visits, searchQuery]);
+    return visits.filter(v => {
+      const matchesSearch = !searchQuery || 
+        v.userName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        v.userEmail.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        v.reason.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesType = filterType === 'ALL' || v.userType === filterType;
+      const matchesDept = filterDept === 'ALL' || v.department === filterDept;
+      const matchesReason = filterReason === 'ALL' || v.reason.includes(filterReason);
+
+      return matchesSearch && matchesType && matchesDept && matchesReason;
+    });
+  }, [visits, searchQuery, filterType, filterDept, filterReason]);
+
+  const stats = useMemo(() => {
+    const today = filteredVisits.filter(v => isToday(v.timestamp)).length;
+    const week = filteredVisits.filter(v => isThisWeek(v.timestamp)).length;
+    const month = filteredVisits.filter(v => isThisMonth(v.timestamp)).length;
+    return { today, week, month };
+  }, [filteredVisits]);
 
   const filteredUsers = useMemo(() => {
     if (!searchQuery) return users;
@@ -76,10 +93,6 @@ export default function AdminDashboard() {
               <span className="text-xl font-bold text-primary font-headline">VirtuLib <span className="text-accent">Admin</span></span>
             </div>
             <div className="flex items-center gap-4">
-              <div className="hidden sm:flex flex-col items-end mr-2">
-                <span className="text-sm font-semibold">{currentUser.name}</span>
-                <span className="text-xs text-muted-foreground">Library Administrator</span>
-              </div>
               <Avatar className="h-9 w-9 border border-primary/20">
                 <AvatarImage src={currentUser.avatarUrl} />
                 <AvatarFallback>AD</AvatarFallback>
@@ -125,7 +138,6 @@ export default function AdminDashboard() {
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           <Card className="border-none shadow-md overflow-hidden group hover:shadow-lg transition-all">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full -mr-8 -mt-8 group-hover:bg-primary/10 transition-colors" />
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-primary" /> Daily Entries
@@ -133,11 +145,10 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-4xl font-bold">{stats.today}</div>
-              <p className="text-xs text-muted-foreground mt-1">Visitors checked-in today</p>
+              <p className="text-xs text-muted-foreground mt-1">Visitors (filtered view)</p>
             </CardContent>
           </Card>
           <Card className="border-none shadow-md overflow-hidden group hover:shadow-lg transition-all">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-accent/5 rounded-full -mr-8 -mt-8 group-hover:bg-accent/10 transition-colors" />
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                 <Activity className="h-4 w-4 text-accent" /> Weekly Usage
@@ -149,7 +160,6 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
           <Card className="border-none shadow-md overflow-hidden group hover:shadow-lg transition-all">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-chart-3/5 rounded-full -mr-8 -mt-8 group-hover:bg-chart-3/10 transition-colors" />
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                 <ShieldAlert className="h-4 w-4 text-chart-3" /> Monthly Total
@@ -162,6 +172,75 @@ export default function AdminDashboard() {
           </Card>
         </div>
 
+        {/* Filters Section */}
+        {activeTab === 'VISITS' && (
+          <Card className="border-none shadow-sm bg-white overflow-visible">
+            <CardContent className="p-4 grid grid-cols-1 sm:grid-cols-4 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold flex items-center gap-1.5 px-1">
+                  <Filter className="h-3 w-3" /> Classification
+                </label>
+                <Select value={filterType} onValueChange={(val) => setFilterType(val as any)}>
+                  <SelectTrigger className="rounded-xl h-10">
+                    <SelectValue placeholder="All Visitor Types" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">All Types</SelectItem>
+                    <SelectItem value="STUDENT">Students</SelectItem>
+                    <SelectItem value="EMPLOYEE">Employees</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold flex items-center gap-1.5 px-1">
+                  <Building2 className="h-3 w-3" /> College Department
+                </label>
+                <Select value={filterDept} onValueChange={setFilterDept}>
+                  <SelectTrigger className="rounded-xl h-10">
+                    <SelectValue placeholder="All Departments" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">All Departments</SelectItem>
+                    {DEPARTMENTS.map(dept => (
+                      <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold flex items-center gap-1.5 px-1">
+                  <BookOpen className="h-3 w-3" /> Visit Reason
+                </label>
+                <Select value={filterReason} onValueChange={setFilterReason}>
+                  <SelectTrigger className="rounded-xl h-10">
+                    <SelectValue placeholder="All Reasons" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">All Reasons</SelectItem>
+                    {allReasons.map(r => (
+                      <SelectItem key={r} value={r}>{r}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold flex items-center gap-1.5 px-1">
+                  <Search className="h-3 w-3" /> Search
+                </label>
+                <Input 
+                  placeholder="Name or email..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="rounded-xl h-10"
+                />
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Main Content Area */}
         <Card className="border-none shadow-xl bg-white overflow-hidden">
           <CardHeader className="bg-slate-50/50 border-b">
@@ -170,20 +249,22 @@ export default function AdminDashboard() {
                 <CardTitle className="text-lg">{activeTab === 'VISITS' ? 'Facility Entry Logs' : 'System Users'}</CardTitle>
                 <CardDescription>
                   {activeTab === 'VISITS' 
-                    ? `Showing ${filteredVisits.length} recorded entries across all domains.` 
+                    ? `Showing ${filteredVisits.length} recorded entries.` 
                     : `Managing ${filteredUsers.length} institutional accounts.`
                   }
                 </CardDescription>
               </div>
-              <div className="relative w-full sm:w-72">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  placeholder={activeTab === 'VISITS' ? "Search entries..." : "Lookup user..."}
-                  className="pl-9 h-10 rounded-xl"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
+              {activeTab === 'USERS' && (
+                <div className="relative w-full sm:w-72">
+                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input 
+                    placeholder="Lookup user..."
+                    className="pl-9 h-10 rounded-xl"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+              )}
             </div>
           </CardHeader>
           <CardContent className="p-0">
@@ -194,8 +275,9 @@ export default function AdminDashboard() {
                     <TableHead className="w-[150px]">Time</TableHead>
                     <TableHead>Domain</TableHead>
                     <TableHead>Visitor</TableHead>
-                    <TableHead>Dept</TableHead>
-                    <TableHead className="max-w-[300px]">AI Insight Tool</TableHead>
+                    <TableHead>Classification</TableHead>
+                    <TableHead>Department</TableHead>
+                    <TableHead className="max-w-[250px]">AI Insight Tool</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -219,6 +301,15 @@ export default function AdminDashboard() {
                           <span className="font-semibold text-sm">{visit.userName}</span>
                           <span className="text-[10px] text-muted-foreground">{visit.userEmail}</span>
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" className={cn(
+                          "text-[10px] h-5 gap-1 border-none",
+                          visit.userType === 'STUDENT' ? "bg-amber-50 text-amber-700" : "bg-teal-50 text-teal-700"
+                        )}>
+                          {visit.userType === 'STUDENT' ? <GraduationCap className="h-3 w-3" /> : <Briefcase className="h-3 w-3" />}
+                          {visit.userType === 'STUDENT' ? 'Student' : 'Employee'}
+                        </Badge>
                       </TableCell>
                       <TableCell>
                         <span className="text-xs">{visit.department}</span>
@@ -264,7 +355,10 @@ export default function AdminDashboard() {
                             <AvatarImage src={user.avatarUrl} />
                             <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                           </Avatar>
-                          <span className="font-semibold text-sm">{user.name}</span>
+                          <div className="flex flex-col">
+                            <span className="font-semibold text-sm">{user.name}</span>
+                            <span className="text-[10px] text-muted-foreground uppercase">{user.userType}</span>
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">{user.email}</TableCell>

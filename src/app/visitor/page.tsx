@@ -8,11 +8,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
-import { DEPARTMENTS, VISIT_REASON_GROUPS, VisitDomain } from '@/lib/types';
+import { DEPARTMENTS, VISIT_REASON_GROUPS, VisitDomain, UserType } from '@/lib/types';
 import { useAppStore } from '@/lib/store';
 import { analyzeVisitorReasons } from '@/ai/flows/analyze-visitor-reasons';
-import { LogOut, CheckCircle2, Loader2, Library, Info, Building2, BookOpen } from 'lucide-react';
+import { LogOut, CheckCircle2, Loader2, Library, Building2, BookOpen, GraduationCap, Briefcase } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function VisitorCheckIn() {
@@ -22,6 +23,7 @@ export default function VisitorCheckIn() {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     domain: 'LIBRARY' as VisitDomain,
+    userType: 'STUDENT' as UserType,
     department: '',
     reason: '',
     details: ''
@@ -30,6 +32,8 @@ export default function VisitorCheckIn() {
   useEffect(() => {
     if (!currentUser) {
       router.push('/');
+    } else {
+      setFormData(prev => ({ ...prev, userType: currentUser.userType }));
     }
   }, [currentUser, router]);
 
@@ -48,6 +52,7 @@ export default function VisitorCheckIn() {
         userId: currentUser.id,
         userName: currentUser.name,
         userEmail: currentUser.email,
+        userType: formData.userType,
         department: formData.department,
         domain: formData.domain,
         reason: fullReasonText,
@@ -63,7 +68,7 @@ export default function VisitorCheckIn() {
         duration: 5000,
       });
 
-      setFormData({ domain: 'LIBRARY', department: '', reason: '', details: '' });
+      setFormData({ domain: 'LIBRARY', userType: currentUser.userType, department: '', reason: '', details: '' });
       
     } catch (error) {
       toast({
@@ -141,6 +146,28 @@ export default function VisitorCheckIn() {
           </CardHeader>
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-6">
+              <div className="space-y-3">
+                <Label>Classification</Label>
+                <RadioGroup 
+                  value={formData.userType} 
+                  onValueChange={(val) => setFormData({...formData, userType: val as UserType})}
+                  className="grid grid-cols-2 gap-4"
+                >
+                  <div className="flex items-center space-x-2 border rounded-xl p-3 cursor-pointer hover:bg-slate-50">
+                    <RadioGroupItem value="STUDENT" id="student" />
+                    <Label htmlFor="student" className="flex items-center gap-2 cursor-pointer w-full">
+                      <GraduationCap className="h-4 w-4 text-primary" /> Student
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2 border rounded-xl p-3 cursor-pointer hover:bg-slate-50">
+                    <RadioGroupItem value="EMPLOYEE" id="employee" />
+                    <Label htmlFor="employee" className="flex items-center gap-2 cursor-pointer w-full">
+                      <Briefcase className="h-4 w-4 text-accent" /> Employee
+                    </Label>
+                  </div>
+                </RadioGroup>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="department">College Department</Label>
                 <Select 
@@ -213,14 +240,6 @@ export default function VisitorCheckIn() {
             </CardContent>
           </form>
         </Card>
-
-        <footer className="text-center py-8">
-          <div className="flex justify-center gap-6 text-sm text-muted-foreground">
-            <span className="cursor-pointer hover:underline">Facility Policy</span>
-            <span className="cursor-pointer hover:underline">Support</span>
-            <span className="cursor-pointer hover:underline">Contact</span>
-          </div>
-        </footer>
       </div>
     </div>
   );

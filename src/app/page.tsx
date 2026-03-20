@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -8,6 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useToast } from '@/hooks/use-toast';
 import { Library, LogIn, Mail } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
+import { UserType } from '@/lib/types';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -20,7 +22,6 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
 
-    // Institutional Domain Validation
     const isInstitutionalEmail = email.endsWith('@neu.edu') || email.endsWith('@neu.edu.ph');
     
     if (!isInstitutionalEmail) {
@@ -33,7 +34,6 @@ export default function LoginPage() {
       return;
     }
 
-    // Check if user is blocked in mock store
     const existingUser = users.find(u => u.email.toLowerCase() === email.toLowerCase());
     if (existingUser?.isBlocked) {
       toast({
@@ -45,10 +45,8 @@ export default function LoginPage() {
       return;
     }
 
-    // Role-Based Access Control logic
-    // Admin: jcesperanza@neu.edu.ph
-    // Visitor: Everyone else
     const is_admin = email.toLowerCase() === 'jcesperanza@neu.edu.ph' || email.startsWith('admin');
+    const is_employee = email.includes('.staff') || email.includes('.prof') || is_admin;
 
     setTimeout(() => {
       const user = existingUser || {
@@ -56,6 +54,7 @@ export default function LoginPage() {
         name: email.split('@')[0].split('.').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' '),
         email: email,
         role: is_admin ? 'ADMIN' : 'VISITOR',
+        userType: (is_employee ? 'EMPLOYEE' : 'STUDENT') as UserType,
         isBlocked: false,
         avatarUrl: `https://picsum.photos/seed/${email}/100/100`
       };

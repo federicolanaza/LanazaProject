@@ -1,12 +1,14 @@
 
 export type UserRole = 'ADMIN' | 'VISITOR';
 export type VisitDomain = 'LIBRARY' | 'DEANS_OFFICE';
+export type UserType = 'STUDENT' | 'EMPLOYEE';
 
 export interface User {
   id: string;
   name: string;
   email: string;
   role: UserRole;
+  userType: UserType;
   isBlocked: boolean;
   avatarUrl?: string;
 }
@@ -16,6 +18,7 @@ export interface VisitEntry {
   userId: string;
   userName: string;
   userEmail: string;
+  userType: UserType;
   department: string;
   domain: VisitDomain;
   reason: string;
