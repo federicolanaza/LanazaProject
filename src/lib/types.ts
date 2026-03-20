@@ -34,4 +34,34 @@ export const DEPARTMENTS = [
   'College of Nursing',
   'College of Law',
   'Graduate School',
+  'School of Design',
+  'College of Architecture',
+  'College of Pharmacy',
+  'College of Allied Health Sciences',
+  'School of Management',
+  'College of Social Sciences',
+  'College of Communication',
+  'College of Maritime Studies',
+  'College of Hospitality Management',
+  'College of Fine Arts',
+  'Institute of Technology',
+];
+
+export const VISIT_REASON_GROUPS = [
+  {
+    label: 'Academic Research',
+    reasons: ['Thesis/Dissertation Research', 'Capstone Project', 'Library Resource Consultation', 'Archive Access'],
+  },
+  {
+    label: 'Study & Collaboration',
+    reasons: ['Individual Quiet Study', 'Group Discussion/Project', 'Online Class/Webinar', 'Peer Tutoring'],
+  },
+  {
+    label: 'Facility Services',
+    reasons: ['Book Borrowing/Return', 'Printing/Scanning', 'Computer Lab Access', 'Media Room Reservation'],
+  },
+  {
+    label: 'Administrative',
+    reasons: ['Library Card Registration', 'Clearance Processing', 'Fines/Dues Payment', 'Inquiry/Information Desk'],
+  },
 ];

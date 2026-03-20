@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -6,12 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { DEPARTMENTS } from '@/lib/types';
+import { DEPARTMENTS, VISIT_REASON_GROUPS } from '@/lib/types';
 import { useAppStore } from '@/lib/store';
 import { analyzeVisitorReasons } from '@/ai/flows/analyze-visitor-reasons';
-import { LogOut, CheckCircle2, Loader2, Library } from 'lucide-react';
+import { LogOut, CheckCircle2, Loader2, Library, Info } from 'lucide-react';
 
 export default function VisitorCheckIn() {
   const router = useRouter();
@@ -20,7 +21,8 @@ export default function VisitorCheckIn() {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     department: '',
-    reason: ''
+    reason: '',
+    details: ''
   });
 
   useEffect(() => {
@@ -36,8 +38,11 @@ export default function VisitorCheckIn() {
     setLoading(true);
 
     try {
+      // Combine selection and optional details for AI analysis
+      const fullReasonText = `${formData.reason}${formData.details ? `: ${formData.details}` : ''}`;
+      
       // GenAI Analysis
-      const insights = await analyzeVisitorReasons({ reasonForVisit: formData.reason });
+      const insights = await analyzeVisitorReasons({ reasonForVisit: fullReasonText });
 
       const newVisit = {
         id: Math.random().toString(36).substr(2, 9),
@@ -45,7 +50,7 @@ export default function VisitorCheckIn() {
         userName: currentUser.name,
         userEmail: currentUser.email,
         department: formData.department,
-        reason: formData.reason,
+        reason: fullReasonText,
         timestamp: new Date(),
         aiInsights: insights
       };
@@ -59,7 +64,7 @@ export default function VisitorCheckIn() {
       });
 
       // Clear form
-      setFormData({ department: '', reason: '' });
+      setFormData({ department: '', reason: '', details: '' });
       
     } catch (error) {
       toast({
@@ -123,16 +128,43 @@ export default function VisitorCheckIn() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="reason">Reason for Visit</Label>
-                <Textarea 
-                  id="reason"
-                  placeholder="e.g., Thesis research, borrowing books, group study..."
-                  className="min-h-[120px] rounded-xl resize-none"
-                  value={formData.reason}
-                  onChange={(e) => setFormData({...formData, reason: e.target.value})}
+                <Label htmlFor="reason">Primary Reason for Visit</Label>
+                <Select 
+                  value={formData.reason} 
+                  onValueChange={(val) => setFormData({...formData, reason: val})}
                   required
+                >
+                  <SelectTrigger id="reason" className="h-12 rounded-xl">
+                    <SelectValue placeholder="What brings you here today?" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {VISIT_REASON_GROUPS.map((group) => (
+                      <SelectGroup key={group.label}>
+                        <SelectLabel className="text-primary font-bold">{group.label}</SelectLabel>
+                        {group.reasons.map((r) => (
+                          <SelectItem key={r} value={r}>{r}</SelectItem>
+                        ))}
+                      </SelectGroup>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="details" className="flex items-center gap-1.5">
+                  Additional Details <span className="text-xs font-normal text-muted-foreground">(Optional)</span>
+                </Label>
+                <Textarea 
+                  id="details"
+                  placeholder="Tell us more about your visit (e.g., specific book title, project name)..."
+                  className="min-h-[100px] rounded-xl resize-none"
+                  value={formData.details}
+                  onChange={(e) => setFormData({...formData, details: e.target.value})}
                 />
-                <p className="text-xs text-muted-foreground">Be as descriptive as possible for better service insights.</p>
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-blue-50/50 p-2 rounded-lg border border-blue-100">
+                  <Info className="h-3.5 w-3.5 text-blue-500" />
+                  Your description helps our AI generate better usage insights.
+                </div>
               </div>
 
               <Button 
@@ -142,7 +174,7 @@ export default function VisitorCheckIn() {
               >
                 {loading ? (
                   <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Recording Visit...
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Analyzing Entry...
                   </>
                 ) : (
                   <>
@@ -156,9 +188,9 @@ export default function VisitorCheckIn() {
 
         <footer className="text-center space-y-4 py-8">
           <div className="flex justify-center gap-6 text-sm text-muted-foreground">
-            <span>Library Policy</span>
-            <span>Support</span>
-            <span>Contact</span>
+            <span className="cursor-pointer hover:underline">Library Policy</span>
+            <span className="cursor-pointer hover:underline">Support</span>
+            <span className="cursor-pointer hover:underline">Contact</span>
           </div>
         </footer>
       </div>
