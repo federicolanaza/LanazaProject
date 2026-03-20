@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -11,8 +10,10 @@ import { useToast } from '@/hooks/use-toast';
 import { LogIn, Mail, ShieldCheck, ArrowRight } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { UserType } from '@/lib/types';
-import { useFirestore } from '@/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { useFirestore, useAuth } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import { signInAnonymously } from 'firebase/auth';
+import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -21,6 +22,7 @@ export default function LoginPage() {
   const { toast } = useToast();
   const { setCurrentUser, setCurrentSessionId, users } = useAppStore();
   const firestore = useFirestore();
+  const auth = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,10 +54,13 @@ export default function LoginPage() {
     const is_admin = email.toLowerCase() === 'jcesperanza@neu.edu.ph' || email.startsWith('admin');
     const is_employee = email.includes('.staff') || email.includes('.prof') || is_admin;
 
-    // Simulate login and session creation
-    setTimeout(async () => {
-      const user = existingUser || {
-        id: Math.random().toString(36).substr(2, 9),
+    try {
+      // Authenticate with Firebase to populate request.auth in Security Rules
+      const authResult = await signInAnonymously(auth);
+      const uid = authResult.user.uid;
+      
+      const user = {
+        id: uid, // Use actual Firebase UID
         name: email.split('@')[0].split('.').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' '),
         email: email,
         role: is_admin ? 'ADMIN' : 'VISITOR',
@@ -65,44 +70,42 @@ export default function LoginPage() {
       };
       
       const sessionId = Math.random().toString(36).substr(2, 9);
-      
-      try {
-        // Create a real-time session in Firestore
-        await setDoc(doc(firestore, 'user_sessions', sessionId), {
-          id: sessionId,
-          userId: user.id,
-          userName: user.name,
-          userEmail: user.email,
-          loginTime: new Date().toISOString(),
-          isActive: true,
-          deviceType: window.innerWidth < 768 ? 'mobile' : 'web',
-          userAgent: navigator.userAgent
-        });
+      const sessionRef = doc(firestore, 'user_sessions', sessionId);
 
-        setCurrentUser(user as any);
-        setCurrentSessionId(sessionId);
-        
-        toast({
-          title: 'Login Successful',
-          description: `Welcome back, ${user.name}! Access level: ${user.role}`,
-        });
-        
-        if (user.role === 'ADMIN') {
-          router.push('/admin');
-        } else {
-          router.push('/visitor');
-        }
-      } catch (error) {
-        console.error("Error creating session:", error);
-        toast({
-          variant: 'destructive',
-          title: 'Session Error',
-          description: 'Failed to initialize session. Please try again.',
-        });
-      } finally {
-        setLoading(false);
+      // Non-blocking write to Firestore
+      setDocumentNonBlocking(sessionRef, {
+        id: sessionId,
+        userId: uid,
+        userName: user.name,
+        userEmail: user.email,
+        loginTime: new Date().toISOString(),
+        isActive: true,
+        deviceType: typeof window !== 'undefined' && window.innerWidth < 768 ? 'mobile' : 'web',
+        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown'
+      }, { merge: true });
+
+      setCurrentUser(user as any);
+      setCurrentSessionId(sessionId);
+      
+      toast({
+        title: 'Login Successful',
+        description: `Welcome back, ${user.name}! Access level: ${user.role}`,
+      });
+      
+      if (user.role === 'ADMIN') {
+        router.push('/admin');
+      } else {
+        router.push('/visitor');
       }
-    }, 800);
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Authentication Error',
+        description: error.message || 'Failed to sign in. Please try again.',
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

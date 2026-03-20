@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -17,7 +16,8 @@ import { analyzeVisitorReasons } from '@/ai/flows/analyze-visitor-reasons';
 import { LogOut, CheckCircle2, Loader2, Building2, BookOpen, GraduationCap, Briefcase, MapPin } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useFirestore } from '@/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, collection } from 'firebase/firestore';
+import { updateDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 export default function VisitorCheckIn() {
   const router = useRouter();
@@ -43,14 +43,11 @@ export default function VisitorCheckIn() {
 
   const handleLogout = async () => {
     if (currentSessionId) {
-      try {
-        await updateDoc(doc(firestore, 'user_sessions', currentSessionId), {
-          isActive: false,
-          logoutTime: new Date().toISOString()
-        });
-      } catch (err) {
-        console.error("Logout update error:", err);
-      }
+      const sessionRef = doc(firestore, 'user_sessions', currentSessionId);
+      updateDocumentNonBlocking(sessionRef, {
+        isActive: false,
+        logoutTime: new Date().toISOString()
+      });
     }
     setCurrentUser(null);
     setCurrentSessionId(null);
@@ -73,8 +70,9 @@ export default function VisitorCheckIn() {
         console.warn('AI analysis skipped or failed');
       }
 
+      const checkInId = Math.random().toString(36).substr(2, 9);
       const newVisit = {
-        id: Math.random().toString(36).substr(2, 9),
+        id: checkInId,
         userId: currentUser.id,
         userName: currentUser.name,
         userEmail: currentUser.email,
@@ -85,6 +83,10 @@ export default function VisitorCheckIn() {
         timestamp: new Date().toISOString(),
         aiInsights: insights
       };
+
+      // Record check-in to Firestore
+      const checkInRef = doc(firestore, 'visitor_check_ins', checkInId);
+      setDocumentNonBlocking(checkInRef, newVisit, { merge: false });
 
       addVisit(newVisit);
 

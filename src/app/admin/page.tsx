@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -23,7 +22,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DEPARTMENTS, VISIT_REASON_GROUPS, UserType, UserSession } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, updateDoc, doc } from 'firebase/firestore';
+import { collection, query, where, doc } from 'firebase/firestore';
+import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -92,14 +92,11 @@ export default function AdminDashboard() {
 
   const handleLogout = async () => {
     if (currentSessionId) {
-      try {
-        await updateDoc(doc(firestore, 'user_sessions', currentSessionId), {
-          isActive: false,
-          logoutTime: new Date().toISOString()
-        });
-      } catch (err) {
-        console.error("Logout update error:", err);
-      }
+      const sessionRef = doc(firestore, 'user_sessions', currentSessionId);
+      updateDocumentNonBlocking(sessionRef, {
+        isActive: false,
+        logoutTime: new Date().toISOString()
+      });
     }
     setCurrentUser(null);
     setCurrentSessionId(null);
