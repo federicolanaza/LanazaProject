@@ -1,0 +1,211 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the LibTrack Analytics application, including their roles and institutional affiliation.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the User entity."
+        },
+        "email": {
+          "type": "string",
+          "description": "The institutional email address of the user.",
+          "format": "email"
+        },
+        "name": {
+          "type": "string",
+          "description": "The full name of the user, obtained from Google Login."
+        },
+        "role": {
+          "type": "string",
+          "description": "The role of the user within the application (e.g., 'Admin', 'Visitor')."
+        },
+        "isBlocked": {
+          "type": "boolean",
+          "description": "Indicates if the user is currently blocked from accessing the system."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the user account was first created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp of the last update to the user's profile.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "name",
+        "role",
+        "isBlocked",
+        "createdAt"
+      ]
+    },
+    "VisitorCheckIn": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "VisitorCheckIn",
+      "type": "object",
+      "description": "Records a single check-in event by a visitor at the library.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the VisitorCheckIn entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the User who performed this check-in. (Relationship: User 1:N VisitorCheckIn)"
+        },
+        "collegeDepartment": {
+          "type": "string",
+          "description": "The college department the visitor specified during this particular check-in."
+        },
+        "reasonForVisit": {
+          "type": "string",
+          "description": "The reason provided by the visitor for their visit."
+        },
+        "checkInTime": {
+          "type": "string",
+          "description": "Timestamp when the visitor checked into the library.",
+          "format": "date-time"
+        },
+        "aiCategorization": {
+          "type": "string",
+          "description": "Optional AI-generated categorization or theme from the 'reasonForVisit' text, to assist administrators in understanding visitor trends."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "collegeDepartment",
+        "reasonForVisit",
+        "checkInTime"
+      ]
+    },
+    "UserSession": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserSession",
+      "type": "object",
+      "description": "Tracks an individual user's login session, used for real-time active session monitoring in the Admin dashboard.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the UserSession entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the User associated with this session. (Relationship: User 1:N UserSession)"
+        },
+        "loginTime": {
+          "type": "string",
+          "description": "Timestamp when the user logged into this session.",
+          "format": "date-time"
+        },
+        "logoutTime": {
+          "type": "string",
+          "description": "Timestamp when the user logged out of this session. This property will be absent or null if the session is still active.",
+          "format": "date-time"
+        },
+        "isActive": {
+          "type": "boolean",
+          "description": "Boolean flag indicating if the session is currently active. True if logoutTime is null/absent, False otherwise."
+        },
+        "deviceType": {
+          "type": "string",
+          "description": "Type of device or platform used for the session (e.g., 'web', 'mobile', 'tablet')."
+        },
+        "userAgent": {
+          "type": "string",
+          "description": "User agent string of the client accessing the application, providing browser and operating system information."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "loginTime",
+        "isActive",
+        "deviceType"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "user",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores individual user profiles. Users can read and update their own profile. Administrators can read and update all user profiles, including blocking users. The 'role' field within this document is primarily for client-side logic; administrative authorization is determined by the existence of a document in the '/roles_admin' collection.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user, corresponding to Firebase Authentication's UID."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/roles_admin/{adminId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "A dedicated collection for explicit database-backed access control (DBAC) for administrative roles. The existence of a document with a user's UID as its ID signifies administrative privileges. This is used in security rules to grant 'admin' permissions without hierarchical dependencies. Documents in this collection can be empty or contain minimal data, such as a creation timestamp.",
+          "params": [
+            {
+              "name": "adminId",
+              "description": "The unique identifier of an administrator, corresponding to Firebase Authentication's UID."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/visitor_check_ins/{checkInId}",
+        "definition": {
+          "entityName": "visitorCheckIn",
+          "schema": {
+            "$ref": "#/backend/entities/VisitorCheckIn"
+          },
+          "description": "Stores individual visitor check-in records. Each document includes the `userId` field to denormalize ownership for authorization independence. Regular users can create their own check-in records. All documents are readable by administrators for analytics purposes.",
+          "params": [
+            {
+              "name": "checkInId",
+              "description": "The unique identifier for a specific visitor check-in event."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/user_sessions/{sessionId}",
+        "definition": {
+          "entityName": "userSession",
+          "schema": {
+            "$ref": "#/backend/entities/UserSession"
+          },
+          "description": "Tracks active user login sessions for the real-time Admin dashboard. Each document includes the `userId` field for authorization independence. Users can create a document on login and update it (e.g., set `logoutTime`, `isActive` to false) on logout. All documents are readable by administrators for real-time monitoring.",
+          "params": [
+            {
+              "name": "sessionId",
+              "description": "The unique identifier for a specific user login session."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to be highly secure, scalable, and debuggable by adhering to the core design principles, especially Authorization Independence and Structural Segregation. \n\n**Authorization Independence (CRITICAL):**\n1.  **User Roles:** Instead of relying on a `role` field within the `/users/{userId}` document for critical authorization in security rules, a dedicated collection, `/roles_admin/{adminId}`, is used. An administrator's UID will exist as a document ID in this collection. This allows security rules to check for admin status using `get(/databases/$(database)/documents/roles_admin/$(request.auth.uid)).exists()` without needing to `get()` a user's own profile document, thereby avoiding hierarchical authorization dependencies and enabling atomic operations. \n2.  **Data Ownership:** For `VisitorCheckIn` and `UserSession` documents, the `userId` of the creator is denormalized and stored directly within each document. This means that rules for creating or updating these documents can simply verify `request.auth.uid == request.resource.data.userId`. This completely removes any need for `get()` calls to parent documents (e.g., `/users/{userId}` or any other parent) to determine ownership or permissions, ensuring atomic operations and simplifying rule logic.\n\n**QAPs (Rules are not Filters):**\n1.  **Admin Dashboard Access:** The Admin Dashboard requires listing *all* `VisitorCheckIn` records for analytics and *all* `UserSession` records for real-time monitoring. By placing these in top-level collections (`/visitor_check_ins` and `/user_sessions`), administrators can perform direct `list` queries on these collections. Security rules can then simply allow `list` access if the `request.auth.uid` is identified as an admin via the `/roles_admin` collection. This prevents Firestore from acting as a filter and ensures efficient queries.\n2.  **User-Specific Access:** If a regular user needs to view their own check-in history or active sessions, they would query the respective top-level collection with a `where('userId', '==', request.auth.uid)` clause. Security rules would then explicitly allow `list` operations only if `request.query.userId == request.auth.uid` (or if the user is an admin), ensuring that users only retrieve data they are authorized to see without relying on rules to implicitly filter the results.\n\n**Structural Segregation:**\n*   Each collection (`users`, `roles_admin`, `visitor_check_ins`, `user_sessions`) has a homogeneous security posture. For example, all documents in `/visitor_check_ins` are readable by admins and writable by their respective `userId`s, ensuring consistent and simple security rules. Mixing data with different access requirements in the same collection is avoided.\n\nThis design prioritizes explicit authorization, denormalization of critical access context, and structure that directly supports efficient, secure query patterns for both regular users and administrators, making the system robust and easy to debug."
+  }
+}

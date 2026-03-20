@@ -1,0 +1,120 @@
+rules_version = '2';
+
+/**
+ * LibTrack Analytics - Firestore Security Rules
+ * 
+ * Core Philosophy:
+ * This ruleset implements a robust, DBAC (Database-Backed Access Control) model combined with 
+ * strict ownership validation. Administrative privileges are decoupled from the user's 
+ * profile document and are instead verified via a dedicated '/roles_admin' collection 
+ * to ensure atomic, independent authorization checks.
+ * 
+ * Data Structure:
+ * - /users/{userId}: User profiles, owned by the individual and accessible by admins.
+ * - /roles_admin/{adminId}: Flag documents; existence of a UID here grants administrative access.
+ * - /visitor_check_ins/{checkInId}: Denormalized check-in records.
+ * - /user_sessions/{sessionId}: Real-time session tracking for the admin dashboard.
+ * 
+ * Key Security Decisions:
+ * - Denormalization for Authorization: The 'userId' is stored directly on 'VisitorCheckIn' 
+ *   and 'UserSession' documents. This allows rules to verify ownership without costly 
+ *   'get()' lookups to a parent user document.
+ * - Query Security: Listing of shared top-level collections is restricted. Non-admin users 
+ *   must provide a query filter matching their own 'userId' to list their own records.
+ * - Prototyping Flexibility: While authorization is strictly enforced based on identity 
+ *   and ownership, the internal schema of documents (beyond ID/Owner fields) is not 
+ *   validated, allowing for rapid front-end iteration.
+ */
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- Global Helper Functions ---
+
+    /** Checks if the request is from an authenticated user. */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /** Checks if the authenticated user has administrative privileges. */
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    }
+
+    /** Checks if the provided ID matches the authenticated user's UID. */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /** Checks if the data field (e.g., userId) matches the authenticated user's UID. */
+    function isDocumentOwner(ownerId) {
+      return isSignedIn() && request.auth.uid == ownerId;
+    }
+
+    /** Combines ownership check with existence check for updates and deletes. */
+    function isExistingOwner(ownerId) {
+      return resource != null && isDocumentOwner(ownerId);
+    }
+
+    // --- Collection Rules ---
+
+    /**
+     * @description Rules for user profiles. Users manage their own; admins manage all.
+     * @path /users/{userId}
+     * @allow (create) if user is creating their own profile.
+     * @deny (create) if the UID in the path does not match the auth UID.
+     * @principle Restricts access to a user's own data tree and enforces self-creation.
+     */
+    match /users/{userId} {
+      allow get: if isSignedIn() && (isOwner(userId) || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if (isOwner(userId) || isAdmin()) && resource != null && request.resource.data.id == resource.data.id;
+      allow delete: if isAdmin() && resource != null;
+    }
+
+    /**
+     * @description Administrative flag collection. Existence of a UID here grants admin rights.
+     * @path /roles_admin/{adminId}
+     * @allow (get) if the user is signed in (needed for admin check logic).
+     * @deny (create, update, delete) for all client-side requests to prevent privilege escalation.
+     * @principle Implements DBAC (Database-Backed Access Control) for administrative roles.
+     */
+    match /roles_admin/{adminId} {
+      allow get: if isSignedIn();
+      allow list: if isAdmin();
+      allow create, update, delete: if false; // Admin roles managed via Console or Cloud Functions only.
+    }
+
+    /**
+     * @description Tracks individual visitor check-ins.
+     * @path /visitor_check_ins/{checkInId}
+     * @allow (create) if the user is signed in and the userId in the data matches their auth UID.
+     * @deny (list) if a non-admin attempts to list without a filter on their own userId.
+     * @principle Validates relational integrity using denormalized ownership fields.
+     */
+    match /visitor_check_ins/{checkInId} {
+      allow get: if isSignedIn() && (isDocumentOwner(resource.data.userId) || isAdmin());
+      allow list: if isSignedIn() && (isAdmin() || request.query.userId == request.auth.uid);
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAdmin() && resource != null;
+      allow delete: if isAdmin() && resource != null;
+    }
+
+    /**
+     * @description Real-time user sessions for admin monitoring.
+     * @path /user_sessions/{sessionId}
+     * @allow (create/update) if the user is managing their own session (login/logout).
+     * @deny (update) if the userId field is modified to hijack another user's session.
+     * @principle Enforces document ownership for writes while allowing admin visibility.
+     */
+    match /user_sessions/{sessionId} {
+      allow get: if isSignedIn() && (isDocumentOwner(resource.data.userId) || isAdmin());
+      allow list: if isSignedIn() && (isAdmin() || request.query.userId == request.auth.uid);
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if resource != null && (isExistingOwner(resource.data.userId) || isAdmin()) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isAdmin() && resource != null;
+    }
+
+  }
+}
