@@ -1,0 +1,17 @@
+
+{
+  "placeholderImages": [
+    {
+      "id": "library-hero",
+      "description": "A modern university library interior with students studying.",
+      "imageUrl": "https://picsum.photos/seed/library1/1200/800",
+      "imageHint": "modern library"
+    },
+    {
+      "id": "admin-avatar",
+      "description": "Professional avatar for library administrator.",
+      "imageUrl": "https://picsum.photos/seed/admin1/100/100",
+      "imageHint": "professional person"
+    }
+  ]
+}
