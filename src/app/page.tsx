@@ -220,11 +220,16 @@ export default function LoginPage() {
                   </div>
                 )}
 
-                {!showPassword && (
-                  <div className="flex justify-between items-center px-1">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Admin Demo: jcesperanza@neu.edu.ph</span>
-                  </div>
-                )}
+                <div className="flex flex-col gap-1 px-1">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+                    Admin Demo: jcesperanza@neu.edu.ph
+                  </span>
+                  {showPassword && (
+                    <span className="text-[10px] font-bold text-primary uppercase tracking-tighter animate-pulse">
+                      Password: admin123
+                    </span>
+                  )}
+                </div>
                 
                 {showPassword && (
                   <Button 
@@ -269,7 +274,6 @@ export default function LoginPage() {
   );
 }
 
-// Internal component for CardDescription to avoid linting issues with the typo if it were global
 const Card_Description = ({ children, className }: { children: React.ReactNode, className?: string }) => (
   <p className={cn("text-sm text-muted-foreground", className)}>{children}</p>
 );
