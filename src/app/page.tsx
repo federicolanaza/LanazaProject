@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -8,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { LogIn, Mail } from 'lucide-react';
+import { LogIn, Mail, ShieldCheck, ArrowRight } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { UserType } from '@/lib/types';
 
@@ -75,63 +74,79 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4 bg-[#F2F5F8]">
-      <div className="w-full max-w-md space-y-8">
-        <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center p-2 bg-white rounded-2xl shadow-lg mb-4 border border-slate-100">
+    <div className="flex min-h-screen items-center justify-center p-4 bg-gradient-to-tr from-slate-100 to-blue-50">
+      <div className="w-full max-w-[440px] relative">
+        {/* Decorative Elements */}
+        <div className="absolute -top-24 -left-24 w-48 h-48 bg-primary/10 rounded-full blur-3xl" />
+        <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-accent/10 rounded-full blur-3xl" />
+
+        <div className="text-center mb-8 relative">
+          <div className="inline-flex items-center justify-center p-4 bg-white rounded-3xl shadow-2xl mb-6 border border-slate-100 transition-transform hover:scale-105">
             <Image 
               src="https://upload.wikimedia.org/wikipedia/en/c/c6/New_Era_University.svg" 
               alt="NEU Logo" 
-              width={80} 
-              height={80} 
+              width={90} 
+              height={90} 
               className="object-contain"
               priority
             />
           </div>
-          <h1 className="text-4xl font-bold tracking-tight text-primary font-headline">VirtuLib</h1>
-          <p className="text-muted-foreground">NEU Library Facility Management</p>
+          <h1 className="text-5xl font-black tracking-tight text-primary mb-2">VirtuLib</h1>
+          <p className="text-slate-500 font-medium">Next-Gen Facility Access Management</p>
         </div>
 
-        <Card className="border-none shadow-xl bg-white/80 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="text-xl font-semibold">Institutional Login</CardTitle>
-            <CardDescription>Enter your school email to access the facility.</CardDescription>
+        <Card className="border-none shadow-2xl bg-white/90 backdrop-blur-xl rounded-[2rem] overflow-hidden">
+          <CardHeader className="pt-8 pb-4">
+            <div className="flex items-center gap-2 text-primary/80 mb-1">
+              <ShieldCheck className="h-4 w-4" />
+              <span className="text-xs font-bold uppercase tracking-widest">Secure Access</span>
+            </div>
+            <CardTitle className="text-2xl font-bold">Institutional Login</CardTitle>
+            <CardDescription className="text-slate-500">Sign in with your university credentials to continue.</CardDescription>
           </CardHeader>
           <form onSubmit={handleLogin}>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
               <div className="space-y-2">
-                <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <div className="relative group">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-primary transition-colors" />
                   <Input 
                     type="email" 
                     placeholder="name@neu.edu.ph" 
-                    className="pl-10"
+                    className="pl-12 h-14 rounded-2xl border-slate-200 bg-slate-50/50 focus:bg-white transition-all text-base"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
                   />
                 </div>
-                <p className="text-xs text-muted-foreground px-1">Try: jcesperanza@neu.edu.ph (Admin)</p>
+                <div className="flex justify-between items-center px-1">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Admin Demo: jcesperanza@neu.edu.ph</span>
+                </div>
               </div>
             </CardContent>
-            <CardFooter>
+            <CardFooter className="pb-8 pt-2">
               <Button 
-                className="w-full bg-primary hover:bg-primary/90 text-white py-6 text-lg rounded-xl transition-all hover:scale-[1.02]" 
+                className="w-full h-14 bg-primary hover:bg-primary/90 text-white font-bold rounded-2xl shadow-lg shadow-primary/20 transition-all hover:translate-y-[-2px] active:translate-y-[1px] group" 
                 disabled={loading}
               >
-                {loading ? 'Authenticating...' : (
-                  <>
-                    <LogIn className="mr-2 h-5 w-5" /> Sign in with Institution
-                  </>
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    Authenticating...
+                  </span>
+                ) : (
+                  <span className="flex items-center justify-center gap-2">
+                    Continue <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                  </span>
                 )}
               </Button>
             </CardFooter>
           </form>
         </Card>
         
-        <p className="text-center text-sm text-muted-foreground">
-          &copy; {new Date().getFullYear()} VirtuLib Library Services. All rights reserved.
-        </p>
+        <div className="mt-8 text-center">
+          <p className="text-slate-400 text-sm font-medium">
+            &copy; {new Date().getFullYear()} NEU Library Services
+          </p>
+        </div>
       </div>
     </div>
   );
