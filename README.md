@@ -1,4 +1,4 @@
-# 🏛️ NEU VirtuLib: Digital Visitor Management System
+# 🏛️ NEU VirtuLib:
 
 **NEU VirtuLib** is an elite, real-time visitor tracking and facility management platform designed exclusively for **New Era University**. This system replaces traditional paper logbooks with a secure, digital gateway for students, faculty, and administrators, optimizing campus traffic and resource management.
 
