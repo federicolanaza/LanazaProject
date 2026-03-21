@@ -63,4 +63,4 @@ Firebase Hosting
 
 📦 Installation & Setup
 
-🔗 Live Development Demo Check out the live environment here: https://9000-firebase-studio-1773978964986.cluster-sumfw3zmzzhzkx4mpvz3ogth4y.cloudworkstations.dev/?monospaceUid=667736
+🔗 Live Development Demo Check out the live environment here: https://9000-firebase-studio-1773978964986.cluster-sumfw3zmzzhzkx4mpvz3ogth4y.cloudworkstations.dev/?monospaceUid=49351
