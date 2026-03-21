@@ -1,66 +1,55 @@
-📚 VirtuLib
+NEU VirtuLib: Digital Visitor Management System
+NEU VirtuLib is an elite, real-time visitor tracking and facility management platform designed exclusively for New Era University. This system replaces traditional paper logbooks with a secure, digital gateway for students, faculty, and administrators, optimizing campus traffic and resource management.
 
-A Smart Visitor Check-in & Analytics System for New Era University
+🚀 Key Features
+🏛️ For Visitors (Students & Faculty)
+Instant Check-in: A seamless digital entry system for the University Library and various Dean’s Offices.
 
-VirtuLib is a mobile-first web application designed to streamline both **Library** and **Dean’s Office** visitor check-ins while providing administrators with real-time analytics and monitoring tools.
+Institutional Verification: Secure SSO-style access restricted exclusively to official @neu.edu.ph email domains.
 
-🚀 Features
+Role-Based Profiles: Automated identity designation (Student, Teacher, or Staff) based on institutional credentials.
 
-Quick Check-in:
-Mobile-responsive form with Google Login for fast and secure visitor registration.
+Aesthetic User Interface: A modern, tactile experience featuring high-contrast "Bento-style" cards and glassmorphism effects.
 
-Dual Check-in System:
-Users can select between **Library Visit** or **Dean’s Office Visit** in one unified platform.
+🛡️ For Administrators (Staff Portal)
+Real-time Analytics Dashboard: A centralized command center providing live visualizations of facility usage and visitor demographics.
 
-Smart Input System:
-Structured inputs including department, visitor type (Student/Employee), and grouped reasons for visit.
+Granular Data Filtering: Advanced filtering capabilities allowing administrators to sort statistics by College Department, Visitor Type, and Reason for Visit.
 
-Success Feedback:
-Interactive “Welcome to NEU Library!” confirmation after successful check-in.
+Active Session Monitoring: Real-time tracking of currently logged-in users across mobile and desktop platforms powered by Firestore onSnapshot.
 
-Admin Dashboard:
-Real-time analytics with visitor counts filtered by **Day, Week, Month**, department, and visit type.
+Comprehensive Audit Logs: A searchable and exportable history of all campus check-ins for security and reporting.
 
-Advanced Filtering:
-Filter data by:
+🤖 Intelligence & Security
+AI-Powered Insights: Integrated with Google Genkit (Gemini 2.5 Flash) to automatically generate usage reports and identify peak traffic patterns.
 
-* College Department
-* Reason for Visit
-* Visitor Type
+Administrative RBAC: Hardcoded administrative privileges for authorized personnel, specifically configured for jcesperanza@neu.edu.ph.
 
-Active Sessions Monitoring:
-Live tracking of logged-in users using Firebase real-time updates.
+Secure Authentication: Enhanced two-step verification for staff members to ensure data integrity.
 
-User Management:
-Search users and manage access with a **Block User** feature.
-
-Dean’s Office Log System:
-Digital logbook with status tracking:
-
-* Waiting
-* In-Meeting
-* Completed
-* 
 🛠️ Tech Stack
+Framework: Next.js 15 (App Router with Turbopack)
 
-Frontend:
-Next.js, TypeScript, Tailwind CSS
+UI & Styling: React, Tailwind CSS, ShadCN UI
 
-Backend / Database:
-Firebase Firestore
+Backend & Database: Firebase Firestore (Real-time synchronization)
 
-Authentication:
-Firebase Auth (Google Login – *@neu.edu.ph*)
+Authentication: Firebase Authentication
 
-Realtime Features:
-Firestore onSnapshot (Live updates)
+Generative AI: Google Genkit (Gemini 2.5 Flash)
 
-AI Integration:
-Gemini API (for optional visit insights)
+Icons: Lucide React
 
-Hosting:
-Firebase Hosting
+📁 Project Structure
+src/app: Next.js App Router containing portal-specific layouts and page logic.
 
-📦 Installation & Setup
+src/ai: Genkit flows and AI prompt definitions for automated data analysis.
 
-🔗 Live Development Demo Check out the live environment here: https://9000-firebase-studio-1773978964986.cluster-sumfw3zmzzhzkx4mpvz3ogth4y.cloudworkstations.dev/?monospaceUid=49351
+src/firebase: Client-side Firebase configuration and custom hooks (useCollection, useDoc).
+
+src/lib: Shared utilities, TypeScript interfaces, and global state management.
+
+src/components: Reusable UI components, including the dashboard stat cards and check-in forms.
+
+🔗 Live Development Demo Check out the live environment here: https://sampolkoeto.vercel.app/
+                                               Alternate link: https://sl1nk.com/qek0M
